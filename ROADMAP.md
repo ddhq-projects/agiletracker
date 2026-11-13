@@ -2,6 +2,7 @@
 
 ## MVP
 
+- [ ] new repo [https://github.com/ddhq-projects/agiletracker/pull/1](https://github.com/ddhq-projects/agiletracker/pull/1) 
 - [ ] Alfa 26.11
   - [ ] go [https://github.com/anatolii-iumashev/agiletracker/pull/6](https://github.com/anatolii-iumashev/agiletracker/pull/6)
     - sidebar - collapsed
