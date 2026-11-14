@@ -2,11 +2,15 @@
 
 ## MVP
 
-- [ ] new repo [https://github.com/ddhq-projects/agiletracker/pull/1](https://github.com/ddhq-projects/agiletracker/pull/1) 
-- [ ] Alfa 26.11
-  - [ ] go [https://github.com/anatolii-iumashev/agiletracker/pull/6](https://github.com/anatolii-iumashev/agiletracker/pull/6)
+- [ ] new repo [https://github.com/ddhq-projects/agiletracker/pull/1](https://github.com/ddhq-projects/agiletracker/pull/1)
+- [ ] Alfa 3
+  - [ ] add for kanban and issues/items [https://github.com/relaticle/flowforge](https://github.com/relaticle/flowforge)
+  - [ ] add for comments for issues/items [https://github.com/relaticle/comments](https://github.com/relaticle/comments)
+  - [ ] add as settings for items custom fields [https://github.com/relaticle/custom-fields](https://github.com/relaticle/custom-fields)
+  - [ ] add [https://github.com/relaticle/activity-log](https://github.com/relaticle/activity-log)
+  - [ ] go [https://github.com/anatolii-iumashev/agiletracker/pull/6](https://github.com/anatolii-iumashev/agiletracker/pull/6)
     - sidebar - collapsed
-    - save files - on local and S3
+      - save files - on local and S3
 
 - [ ] beta 1
   - add master setup - like wordpress - if no data - setup first admin user for first auto login
