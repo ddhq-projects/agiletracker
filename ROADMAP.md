@@ -1,22 +1,27 @@
 # ROADMAP — AgileTracker
 
-
 ## MVP
 
+- [ ] new repo [https://github.com/ddhq-projects/agiletracker/pull/1](https://github.com/ddhq-projects/agiletracker/pull/1)
 - [ ] Alfa 3
-  - [ ] add for kanban and issues/items [https://github.com/relaticle/flowforge](https://github.com/relaticle/flowforge)
-  - [ ] add for comments for issues/items [https://github.com/relaticle/comments](https://github.com/relaticle/comments)
-  - [ ] add as settings for items custom fields [https://github.com/relaticle/custom-fields](https://github.com/relaticle/custom-fields)
-  - [ ] add [https://github.com/relaticle/activity-log](https://github.com/relaticle/activity-log)
-  - [ ] sidebar - collapsed
-    - save files - on local and S3
+  - [ ] add for kanban and issues/items [https://github.com/relaticle/flowforge](https://github.com/relaticle/flowforge)
+  - [ ] add for comments for issues/items [https://github.com/relaticle/comments](https://github.com/relaticle/comments)
+  - [ ] add as settings for items custom fields [https://github.com/relaticle/custom-fields](https://github.com/relaticle/custom-fields)
+  - [ ] add [https://github.com/relaticle/activity-log](https://github.com/relaticle/activity-log)
+  - [ ] go [https://github.com/anatolii-iumashev/agiletracker/pull/6](https://github.com/anatolii-iumashev/agiletracker/pull/6)
+    - sidebar - collapsed
+      - save files - on local and S3
 
 - [ ] beta 1
-    - add master setup - like wordpress - if no data - setup first admin user for first auto login
-    - merge migrations (one per model + one for settings)
-    - [ ] Kanban board (drag & drop, status columns)
-    - [ ] Roles & permissions (admin, manager, user) via Spatie
-    - [ ] Sub issues (parent_id in Item)
+  - add master setup - like wordpress - if no data - setup first admin user for first auto login
+  - merge migrations (one per model + one for settings)
+  - [ ] Kanban board (drag & drop, status columns)
+  - [ ] Roles & permissions (admin, manager, user) via Spatie
+  - [ ] Sub issues (parent_id in Item)
+- [ ] f [http://agiletracker.localhost/favorite](http://agiletracker.localhost/favorite) rename to favorites
+  - [ ] mv to group Collections
+  - [ ] in Dashboard this should be at the top and look like cards - buttons - each one a click-through to the right link
+  - [ ] the cards should be sortable
 
 ## Upcoming
 
@@ -29,7 +34,8 @@
 - [x] Dashboard with widgets (my tasks, recent activity)
 
 ### Phase 2
-- plugin-system - docs/rfc/2026-05-30-plugin-system.md 
+
+- plugin-system - docs/rfc/2026-05-30-plugin-system.md
 
 ### Future
 
@@ -39,14 +45,17 @@
 - [ ] Tests (Unit + Feature, critical path coverage)
 
 ## Plugins
+
 - [ ] Time tracking (estimated/spent in Item)
 
 ## Tooling evaluation
 
-| Tool | Status | Notes |
-|---|---|---|
-| `laravel/boost` | ✅ Installed | Laravel + PHP guidelines in AGENTS.md. Filament section will appear after installing filament/filament and re-running `boost:install` |
-| `filament/blueprint` | 🔮 Future | Paid package for Filament v4+. Generates detailed implementation plans (models, resources, forms, tables, policies, tests). **Re-evaluate after**: migrating to Filament v4 and introducing complex features (workflows, wizards, multi-tenancy). Current project scope (4 models) doesn't justify the license cost |
+
+| Tool                 | Status      | Notes                                                                                                                                                                                                                                                                                                               |
+| -------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `laravel/boost`      | ✅ Installed | Laravel + PHP guidelines in AGENTS.md. Filament section will appear after installing filament/filament and re-running `boost:install`                                                                                                                                                                               |
+| `filament/blueprint` | 🔮 Future   | Paid package for Filament v4+. Generates detailed implementation plans (models, resources, forms, tables, policies, tests). **Re-evaluate after**: migrating to Filament v4 and introducing complex features (workflows, wizards, multi-tenancy). Current project scope (4 models) doesn't justify the license cost |
+
 
 ### When to revisit filament/blueprint
 
