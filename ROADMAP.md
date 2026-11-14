@@ -4,7 +4,11 @@
 ## MVP
 
 - [ ] Alfa 3
-    - sidebar - collapsed
+  - [ ] add for kanban and issues/items [https://github.com/relaticle/flowforge](https://github.com/relaticle/flowforge)
+  - [ ] add for comments for issues/items [https://github.com/relaticle/comments](https://github.com/relaticle/comments)
+  - [ ] add as settings for items custom fields [https://github.com/relaticle/custom-fields](https://github.com/relaticle/custom-fields)
+  - [ ] add [https://github.com/relaticle/activity-log](https://github.com/relaticle/activity-log)
+  - [ ] sidebar - collapsed
     - save files - on local and S3
 
 - [ ] beta 1
