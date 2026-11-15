@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Pages;
 
+use App\Access\ItemAccess;
 use App\Actions\AddItemsToBoard;
 use App\Filament\Resources\BoardResource;
 use App\Filament\Resources\ItemResource;
@@ -111,7 +112,13 @@ class BoardView extends BoardPage
             ->query(
                 BoardItem::query()
                     ->where('board_id', $boardRecord->getKey())
-                    ->whereHas('item')
+                    ->whereHas('item', function (Builder $query): void {
+                        $user = auth()->user();
+
+                        if ($user instanceof User) {
+                            app(ItemAccess::class)->scopeVisibleTo($query, $user);
+                        }
+                    })
                     ->with(['item.assignee', 'item.labels']),
             )
             ->columnIdentifier('board_column_id')
@@ -237,6 +244,26 @@ class BoardView extends BoardPage
 
     // ─── Page actions ─────────────────────────────────────────────────────────
 
+    /**
+     * The items the user may put on a board: the ones inside their perimeter
+     * and the ones they are allowed to change.
+     *
+     * @return Builder<Item>
+     */
+    protected function visibleItemsQuery(): Builder
+    {
+        $query = Item::query();
+        $user = auth()->user();
+
+        if (! $user instanceof User) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        app(ItemAccess::class)->scopeVisibleTo($query, $user);
+
+        return $query;
+    }
+
     protected function getHeaderActions(): array
     {
         return [
@@ -249,13 +276,13 @@ class BoardView extends BoardPage
                         ->helperText('Tasks and projects can be on any number of boards.')
                         ->multiple()
                         ->searchable()
-                        ->getSearchResultsUsing(fn (string $search): array => Item::query()
+                        ->getSearchResultsUsing(fn (string $search): array => $this->visibleItemsQuery()
                             ->where('title', 'like', '%'.$search.'%')
                             ->orderBy('title')
                             ->limit(50)
                             ->pluck('title', 'id')
                             ->all())
-                        ->getOptionLabelsUsing(fn (array $values): array => Item::query()
+                        ->getOptionLabelsUsing(fn (array $values): array => $this->visibleItemsQuery()
                             ->whereKey($values)
                             ->pluck('title', 'id')
                             ->all())

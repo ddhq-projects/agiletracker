@@ -8,7 +8,7 @@ use App\Models\Label;
 // ─── Create / read ───────────────────────────────────────────────────────
 
 test('a label can be created with a default color', function () {
-    actingAsApi(['labels:write']);
+    actingAsApi(['labels:write'], actingAsManagerSolo());
 
     $response = $this->postJson('/api/v1/labels/mutate', [
         'mutate' => [['operation' => 'create', 'attributes' => ['name' => 'billing']]],
@@ -20,7 +20,7 @@ test('a label can be created with a default color', function () {
 });
 
 test('the color must be a hex triplet and the name is required', function () {
-    actingAsApi(['labels:write']);
+    actingAsApi(['labels:write'], actingAsManagerSolo());
 
     $this->postJson('/api/v1/labels/mutate', [
         'mutate' => [['operation' => 'create', 'attributes' => ['name' => 'bad', 'color' => 'red']]],
@@ -45,7 +45,7 @@ test('labels are searchable by name', function () {
 });
 
 test('the items relation is read-only and includable', function () {
-    $user = actingAsApi(['labels:read', 'labels:write']);
+    $user = actingAsApi(['labels:read', 'labels:write'], actingAsManagerSolo());
     $item = Item::factory()->create(['meta' => ['type' => 'task'], 'reporter_id' => $user->id]);
     $label = Label::create(['name' => 'billing']);
     $label->items()->attach($item);
@@ -69,7 +69,7 @@ test('the items relation is read-only and includable', function () {
 // ─── Delete ──────────────────────────────────────────────────────────────
 
 test('deleting a label removes only the pivot links', function () {
-    actingAsApi(['labels:write', 'labels:read']);
+    actingAsApi(['labels:write', 'labels:read'], actingAsManagerSolo());
     $item = Item::factory()->create(['meta' => ['type' => 'task']]);
     $label = Label::create(['name' => 'billing']);
     $label->items()->attach($item);
@@ -82,7 +82,7 @@ test('deleting a label removes only the pivot links', function () {
 });
 
 test('label updates accept one field at a time', function () {
-    actingAsApi(['labels:write']);
+    actingAsApi(['labels:write'], actingAsManagerSolo());
     $label = Label::create(['name' => 'billing', 'color' => '#111111']);
 
     $this->postJson('/api/v1/labels/mutate', [

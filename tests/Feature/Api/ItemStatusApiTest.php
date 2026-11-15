@@ -6,7 +6,7 @@ use App\Enums\ItemStatus;
 use App\Models\Item;
 
 test('creation defaults the status to todo', function () {
-    actingAsApi(['items:write']);
+    actingAsApi(['items:write'], actingAsManagerSolo());
 
     $response = $this->postJson('/api/v1/items/mutate', [
         'mutate' => [['operation' => 'create', 'attributes' => ['title' => 'No status sent', 'type' => 'task']]],
@@ -18,7 +18,7 @@ test('creation defaults the status to todo', function () {
 });
 
 test('a supplied status is written and read back', function () {
-    actingAsApi(['items:write']);
+    actingAsApi(['items:write'], actingAsManagerSolo());
 
     $response = $this->postJson('/api/v1/items/mutate', [
         'mutate' => [['operation' => 'create', 'attributes' => [
@@ -34,7 +34,7 @@ test('a supplied status is written and read back', function () {
 });
 
 test('creation refuses a status outside the workflow', function () {
-    actingAsApi(['items:write']);
+    actingAsApi(['items:write'], actingAsManagerSolo());
 
     $this->postJson('/api/v1/items/mutate', [
         'mutate' => [['operation' => 'create', 'attributes' => ['title' => 'Bad', 'type' => 'task', 'status' => 'archived']]],
@@ -44,7 +44,7 @@ test('creation refuses a status outside the workflow', function () {
 });
 
 test('an update refuses an unknown status and keeps the stored one', function () {
-    actingAsApi(['items:write']);
+    actingAsApi(['items:write'], actingAsManagerSolo());
     $item = Item::factory()->create();
 
     $this->postJson('/api/v1/items/mutate', [
@@ -55,7 +55,7 @@ test('an update refuses an unknown status and keeps the stored one', function ()
 });
 
 test('an update writes a valid status', function () {
-    actingAsApi(['items:write']);
+    actingAsApi(['items:write'], actingAsManagerSolo());
     $item = Item::factory()->create();
 
     $this->postJson('/api/v1/items/mutate', [

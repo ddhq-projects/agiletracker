@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "031dc6d64056733a47d78e5b5ab24a7e",
+    "content-hash": "1b11e78154d5afbc2ecdb18981f645c4",
     "packages": [
         {
             "name": "anourvalar/eloquent-serialize",
@@ -5902,6 +5902,60 @@
                 "source": "https://github.com/ramsey/uuid/tree/4.9.4"
             },
             "time": "2026-09-16T11:39:30+00:00"
+        },
+        {
+            "name": "relaticle/activity-log",
+            "version": "v1.2.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/relaticle/activity-log.git",
+                "reference": "638ee8ddddf6277df91da377cdd8d4efcb30c0e3"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/relaticle/activity-log/zipball/638ee8ddddf6277df91da377cdd8d4efcb30c0e3",
+                "reference": "638ee8ddddf6277df91da377cdd8d4efcb30c0e3",
+                "shasum": ""
+            },
+            "require": {
+                "filament/filament": "^5.0",
+                "illuminate/contracts": "^12.0|^13.0",
+                "illuminate/database": "^12.0|^13.0",
+                "illuminate/support": "^12.0|^13.0",
+                "php": "^8.4",
+                "spatie/laravel-activitylog": "^5.0",
+                "spatie/laravel-package-tools": "^1.16"
+            },
+            "require-dev": {
+                "laravel/pint": "^1.0",
+                "orchestra/testbench": "^10.0|^11.0",
+                "pestphp/pest": "^4.0",
+                "pestphp/pest-plugin-laravel": "^4.0",
+                "pestphp/pest-plugin-livewire": "^4.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Relaticle\\ActivityLog\\ActivityLogServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Relaticle\\ActivityLog\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Reusable Filament plugin that renders a unified activity-log timeline for any Eloquent model",
+            "support": {
+                "issues": "https://github.com/relaticle/activity-log/issues",
+                "source": "https://github.com/relaticle/activity-log/tree/v1.2.2"
+            },
+            "time": "2026-08-14T16:14:55+00:00"
         },
         {
             "name": "relaticle/comments",

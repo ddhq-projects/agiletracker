@@ -15,6 +15,7 @@
         "laravel/tinker": "^3.0",
         "league/flysystem-aws-s3-v3": "^3.0",
         "lomkit/laravel-rest-api": "^3.0",
+        "relaticle/activity-log": "^1.2",
         "relaticle/comments": "^1.0",
         "relaticle/flowforge": "^4.0",
         "spatie/laravel-activitylog": "^5.1",

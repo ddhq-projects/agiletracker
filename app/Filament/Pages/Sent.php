@@ -37,6 +37,7 @@ class Sent extends Page implements HasTable
     {
         return $table
             ->query(fn (): Builder => Item::query()
+                ->visibleTo(auth()->user())
                 ->with('labels')
                 ->where('reporter_id', auth()->id())
             )

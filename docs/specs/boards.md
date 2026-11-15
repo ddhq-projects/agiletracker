@@ -69,6 +69,12 @@ The old single board is preserved as a default board:
 - **No board is auto-selected for new items.** A board is a deliberate
   collection; an item joins one when someone adds it. The default board is a
   one-off backfill, not a rule.
+- **A board is not an access boundary.** `BoardPolicy` asks for `boards.view`
+  to read a board and `boards.manage` to change its name, columns or order;
+  adding, moving and removing a card asks `ItemPolicy::update` for the item.
+  The card query runs the item's visibility scope, so a hidden item simply has
+  no card and its WIP counter does not count it. `board_items` is never a second
+  ACL: see [access-control.md](access-control.md).
 
 ## Deviations from RFC
 
@@ -81,9 +87,11 @@ The old single board is preserved as a default board:
 ## Known limitations / next steps
 
 - Boards are not exposed through REST API v1; only items are.
-- Board access is flat: every signed-in user may view and manage every board
-  (`BoardPolicy` mirrors the permissive item and label policies). Per-board
-  membership rules are a later feature.
+- Board structure is a manager action: `boards.manage` (admin and manager) adds,
+  renames and reorders boards and columns, while `boards.view` lets every role
+  read them. Per-board membership rules (only some users open a board) are not
+  implemented — the item perimeter is what hides work, and a board without
+  visible cards is empty rather than forbidden.
 - No swimlanes, board templates, saved views, filters beyond assignee/label,
   or real-time collaboration.
 - A board is a manual collection; there is no rule yet such as “all items with

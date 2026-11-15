@@ -122,7 +122,7 @@ test('a comment updates only its body', function () {
 // ─── Perimeter ───────────────────────────────────────────────────────────
 
 test('comments of a trashed item leave search, mutate and delete', function () {
-    $author = actingAsApi(['comments:read', 'comments:write', 'items:read', 'items:write']);
+    $author = actingAsApi(['comments:read', 'comments:write', 'items:read', 'items:write'], actingAsManagerSolo());
     $item = Item::factory()->create(['meta' => ['type' => 'task']]);
     $comment = Comment::create(['item_id' => $item->id, 'user_id' => $author->id, 'body' => 'Hidden soon']);
 

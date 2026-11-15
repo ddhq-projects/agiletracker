@@ -7,6 +7,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Relaticle\Comments\Models\Comment as PackageComment;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 /**
  * The application's comment model. The package owns the polymorphic storage;
@@ -15,6 +17,8 @@ use Relaticle\Comments\Models\Comment as PackageComment;
  */
 class Comment extends PackageComment
 {
+    use LogsActivity;
+
     protected $fillable = [
         'body',
         'parent_id',
@@ -62,5 +66,15 @@ class Comment extends PackageComment
                 'commenter_type' => (new User)->getMorphClass(),
             ],
         );
+    }
+
+    // ─── Activity log ─────────────────────────────────────────────────────────
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['body', 'edited_at', 'pinned_at'])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges();
     }
 }

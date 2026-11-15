@@ -22,6 +22,8 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Support\Facades\Gate;
+use Relaticle\ActivityLog\Filament\Actions\ActivityLogAction;
 use Relaticle\Comments\Livewire\Comments;
 
 class ViewItem extends ViewRecord
@@ -33,6 +35,9 @@ class ViewItem extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            ActivityLogAction::make()
+                ->visible(fn (): bool => Gate::allows('view', $this->getRecord())),
+
             Actions\EditAction::make(),
 
             Actions\Action::make('addToBoard')

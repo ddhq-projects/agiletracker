@@ -4,14 +4,8 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Models\Favorite;
-use App\Models\Item;
-use App\Models\Label;
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Role;
 
 class DatabaseSeeder extends Seeder
 {
@@ -21,6 +15,7 @@ class DatabaseSeeder extends Seeder
     {
         // ─── Split seeders: Auth & Demo Data ───────────────
         $this->call([
+            RolesAndPermissionsSeeder::class,
             AuthSeeder::class,
             DemoDataSeeder::class,
         ]);

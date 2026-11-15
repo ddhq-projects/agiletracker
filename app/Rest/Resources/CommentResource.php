@@ -9,6 +9,8 @@ use App\Models\Item;
 use App\Models\User;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Lomkit\Rest\Fields\DateTime;
 use Lomkit\Rest\Fields\ID;
@@ -86,19 +88,33 @@ class CommentResource extends Resource
     }
 
     /**
-     * Comments of a soft-deleted item stay in the database but leave the API.
+     * Comments of a soft-deleted item stay in the database but leave the API,
+     * and a comment is only reachable while its item is.
      */
     public function perimeterQuery(Builder $query): Builder
     {
+        $user = $this->request()->user();
+
         return $query
             ->where('commentable_type', (new Item)->getMorphClass())
-            ->whereHas('item');
+            ->whereHas('item', function (Builder $query) use ($user): void {
+                $query->visibleTo($user);
+            });
     }
 
     public function mutating(MutationNode $entry, Model $model): void
     {
         if ($entry->operation === MutationOperation::Create) {
             $model->user_id = $this->request()->user()?->getKey();
+
+            $itemId = $model->commentable_id ?? $entry->attributes['item_id'] ?? null;
+            $item = $itemId === null ? null : Item::query()->find($itemId);
+
+            if ($item === null || ! Gate::allows('create', Comment::class) || ! Gate::allows('view', $item)) {
+                throw new HttpResponseException(response()->json([
+                    'message' => __('You may not comment on this item.'),
+                ], 403));
+            }
         }
     }
 }

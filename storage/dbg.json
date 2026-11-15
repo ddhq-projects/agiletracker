@@ -1,0 +1,1 @@
+{"roles":["manager"],"role_perm_count":13,"has":true,"can":true,"fresh":true,"all_perms":["items.view","items.create","items.update.related","items.update.all","items.delete","labels.view","labels.manage","boards.view","boards.manage","comments.view","comments.create","comments.moderate","users.view"]}

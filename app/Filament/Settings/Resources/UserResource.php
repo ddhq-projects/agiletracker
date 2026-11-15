@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Filament\Settings\Resources;
 
+use App\Enums\RoleName;
 use App\Filament\Settings\Resources\UserResource\Pages\CreateUser;
 use App\Filament\Settings\Resources\UserResource\Pages\EditUser;
 use App\Filament\Settings\Resources\UserResource\Pages\ListUsers;
@@ -45,10 +48,14 @@ class UserResource extends Resource
                 ->dehydrated(fn ($state) => filled($state))
                 ->required(fn (string $context) => $context === 'create'),
 
-            Forms\Components\Select::make('roles')
-                ->relationship('roles', 'name')
-                ->multiple()
-                ->preload(),
+            // A user holds exactly one base role. The pages read this value and
+            // go through AssignUserRole, which knows about the last admin.
+            Forms\Components\Select::make('role')
+                ->label('Role')
+                ->options(RoleName::options())
+                ->default(RoleName::User->value)
+                ->required()
+                ->dehydrated(false),
         ]);
     }
 

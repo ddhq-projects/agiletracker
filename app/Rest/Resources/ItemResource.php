@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 namespace App\Rest\Resources;
 
+use App\Access\ItemAccess;
 use App\Enums\ItemStatus;
+use App\Enums\ItemVisibility;
 use App\Models\Item;
 use App\Rest\Actions\AssignItems;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use Lomkit\Rest\Attributes\WithoutPerimeter;
 use Lomkit\Rest\Fields\Boolean;
 use Lomkit\Rest\Fields\Date;
 use Lomkit\Rest\Fields\DateTime;
@@ -26,7 +28,6 @@ use Lomkit\Rest\Relations\BelongsTo;
 use Lomkit\Rest\Relations\BelongsToMany;
 use Lomkit\Rest\Relations\HasMany;
 
-#[WithoutPerimeter]
 class ItemResource extends Resource
 {
     public static string $model = Item::class;
@@ -42,6 +43,15 @@ class ItemResource extends Resource
             Endpoint::Operate => ['items:write'],
             default => parent::abilities($endpoint),
         };
+    }
+
+    /**
+     * The API sees exactly the rows the UI sees: the same access service
+     * filters search, details and includes.
+     */
+    public function perimeterQuery(Builder $query): Builder
+    {
+        return $query->visibleTo($this->request()->user());
     }
 
     public function fields(): array
@@ -79,7 +89,26 @@ class ItemResource extends Resource
             Boolean::make('is_epic'),
             Integer::make('parent_id')
                 ->nullable()
-                ->rules(Rule::exists('items', 'id')->whereNull('deleted_at')),
+                ->rules(
+                    Rule::exists('items', 'id')->whereNull('deleted_at'),
+                    function (string $attribute, mixed $value, \Closure $fail): void {
+                        if ($value === null) {
+                            return;
+                        }
+
+                        if (! $this->parentIsVisible($value)) {
+                            $fail(__('The selected parent is not available.'));
+                        }
+                    },
+                ),
+            Integer::make('project_group_id')
+                ->nullable()
+                ->rules(Rule::exists('groups', 'id')->where('type', 'project'))
+                ->examples(1),
+            Text::make('visibility')
+                ->filterable(['=', '!='])
+                ->rules(Rule::in(ItemVisibility::values()))
+                ->examples('restricted'),
             Integer::make('assignee_id')
                 ->nullable()
                 ->rules(Rule::exists('users', 'id')),
@@ -120,8 +149,13 @@ class ItemResource extends Resource
             $model->reporter_id = $this->request()->user()?->getKey();
         }
 
-        if ($entry->operation === MutationOperation::Update && is_array($entry->attributes) && array_key_exists('parent_id', $entry->attributes)) {
-            $this->assertAcyclicParent($entry, (int) $entry->key, $entry->attributes['parent_id']);
+        if ($entry->operation === MutationOperation::Update) {
+            $this->assertUpdatableAttributes($entry, $model);
+            $this->assertCanManageAccess($entry, $model);
+
+            if (is_array($entry->attributes) && array_key_exists('parent_id', $entry->attributes)) {
+                $this->assertAcyclicParent($entry, (int) $entry->key, $entry->attributes['parent_id']);
+            }
         }
     }
 
@@ -132,6 +166,78 @@ class ItemResource extends Resource
                 'message' => __('Items with active children cannot be deleted.'),
             ], 409));
         }
+    }
+
+    /**
+     * A caller that may write only part of the item cannot smuggle another
+     * field into the same mutation.
+     */
+    private function assertUpdatableAttributes(MutationNode $entry, Model $model): void
+    {
+        $user = $this->request()->user();
+
+        if ($user === null || ! $model instanceof Item) {
+            return;
+        }
+
+        $allowed = app(ItemAccess::class)->updatableAttributes($user, $model);
+
+        if (! is_array($allowed)) {
+            return;
+        }
+
+        foreach (array_keys($entry->attributes ?? []) as $attribute) {
+            if (! in_array($attribute, $allowed, true)) {
+                throw ValidationException::withMessages([
+                    $entry->path.'.attributes.'.$attribute => __('This field cannot be changed on this item.'),
+                ]);
+            }
+        }
+    }
+
+    /**
+     * Visibility, the project and the access groups are the reporter's call.
+     */
+    private function assertCanManageAccess(MutationNode $entry, Model $model): void
+    {
+        if (! $model instanceof Item) {
+            return;
+        }
+
+        $attributes = $entry->attributes ?? [];
+        $touchesAccess = array_intersect(array_keys($attributes), ['visibility', 'project_group_id']) !== [];
+
+        if ($touchesAccess && ! Gate::allows('manageAccess', $model)) {
+            throw new HttpResponseException(response()->json([
+                'message' => __('You may not change the access of this item.'),
+            ], 403));
+        }
+    }
+
+    private function assertAccessRelationIsAllowed(MutationNode $entry, Model $model): void
+    {
+        if ($entry->relations === null || ! array_key_exists('accessGroups', $entry->relations)) {
+            return;
+        }
+
+        if (! Gate::allows('manageAccess', $model)) {
+            throw new HttpResponseException(response()->json([
+                'message' => __('You may not change the access of this item.'),
+            ], 403));
+        }
+    }
+
+    private function parentIsVisible(mixed $parentId): bool
+    {
+        $query = Item::query()->whereKey($parentId);
+
+        $user = $this->request()->user();
+
+        if ($user !== null) {
+            app(ItemAccess::class)->scopeVisibleTo($query, $user);
+        }
+
+        return $query->exists();
     }
 
     /**

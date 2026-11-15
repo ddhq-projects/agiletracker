@@ -24,14 +24,22 @@ else.
   instead of `/settings/settings`. It still edits
   `App\Settings\GeneralSettings` through `filament/spatie-laravel-settings-plugin`.
 - `app/Filament/Settings/Resources/UserResource.php` (with its List/Create/Edit
-  pages) serves user management at `/settings/users`. `UserPolicy` still
-  restricts create and update to admins.
-- `App\Models\User::canAccessPanel()` answers `hasRole('admin')` for the
-  `settings` panel and `true` for every other panel, so a non-admin gets a 403 on
-  any settings route while keeping full access to the main panel.
+  pages) serves user management at `/settings/users`. `UserPolicy` restricts
+  create, update and delete to `users.manage`.
+- `App\Filament\Settings\Resources\GroupResource.php` serves typed groups at
+  `/settings/groups` (see [access-control.md](access-control.md)).
+- `App\Filament\Settings\Resources\ActivityResource.php` serves the read-only
+  audit journal at `/settings/activity-log` (see
+  [access-control.md](access-control.md)).
+- The settings panel is reached through `settings.manage`: the user-menu action
+  and `ManageSettings::canAccess()` ask for that permission, while
+  `App\Models\User::canAccessPanel()` keeps the whole `settings` panel at
+  `hasRole('admin')` and every other panel open. A non-admin therefore gets a
+  403 on any settings route while keeping full access to the main panel.
 - The main panel's sidebar no longer carries the General and Users items, the
   `Settings` group or the GitHub link. Settings lives in the user menu (topbar
-  avatar) as an `Action` visible only to admins, pointing at the new panel.
+  avatar) as an `Action` visible only to whoever holds `settings.manage`,
+  pointing at the new panel.
 - The GitHub link moved into the settings panel's sidebar, next to "Back to app",
   and still opens in a new tab.
 - The settings panel leads back out: a "Back to app" button in the topbar
@@ -75,7 +83,11 @@ else.
 
 ## Known limitations / next steps
 
-The rest of the RFC — `relaticle/custom-fields` 3.x, the `meta` backfill, the
-system `type` field and the REST v1 adapter — is not implemented and stays
-blocked on the licensing decision recorded in the RFC's open questions. Nothing
-in this panel change depends on it.
+- **The user form assigns one base role.** `App\Actions\AssignUserRole` refuses
+  to remove the last administrator; role assignment stays in the admin-only
+  panel and is never exposed through the API. See
+  [access-control.md](access-control.md).
+- The rest of the RFC — `relaticle/custom-fields` 3.x, the `meta` backfill, the
+  system `type` field and the REST v1 adapter — is not implemented and stays
+  blocked on the licensing decision recorded in the RFC's open questions.
+  Nothing in this panel change depends on it.

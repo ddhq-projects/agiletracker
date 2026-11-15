@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Enums\RoleName;
 use App\Models\User;
 use Dedoc\Scramble\Scramble;
 use Dedoc\Scramble\Support\Generator\OpenApi;
@@ -51,6 +52,17 @@ class AppServiceProvider extends ServiceProvider
         foreach (self::API_ABILITIES as $ability) {
             Gate::define($ability, fn (User $user): bool => $user->tokenCan($ability));
         }
+
+        // An administrator passes every application gate. The API abilities are
+        // deliberately excluded: a token's abilities stay an independent
+        // barrier, so an admin token without `items:read` still reads nothing.
+        Gate::before(function (User $user, string $ability): ?bool {
+            if (in_array($ability, self::API_ABILITIES, true)) {
+                return null;
+            }
+
+            return $user->hasRole(RoleName::Admin->value) ? true : null;
+        });
 
         // The access policy for the documentation UI is an open question for
         // production: it stays restricted outside local and testing.

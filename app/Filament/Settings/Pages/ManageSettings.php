@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Settings\Pages;
 
+use App\Enums\PermissionName;
 use App\Settings\GeneralSettings;
 use BackedEnum;
 use Filament\Forms\Components\Select;
@@ -28,6 +29,68 @@ class ManageSettings extends SettingsPage
 
     protected static string $settings = GeneralSettings::class;
 
+    /**
+     * The keys of the form that may appear in the journal. Everything the
+     * settings object holds but the form never shows stays out of it.
+     *
+     * @var list<string>
+     */
+    private const array TRACKED_KEYS = [
+        'site_name',
+        'site_description',
+        'default_locale',
+        'date_format',
+        'first_day_of_week',
+        'session_timeout_days',
+        'auto_assign_reporter',
+        'enable_notifications',
+    ];
+
+    public function save(): void
+    {
+        $before = $this->settingsSnapshot();
+
+        parent::save();
+
+        $this->logSettingsChange($before);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function settingsSnapshot(): array
+    {
+        return app(GeneralSettings::class)->toArray();
+    }
+
+    /**
+     * @param  array<string, mixed>  $before
+     */
+    private function logSettingsChange(array $before): void
+    {
+        $after = $this->settingsSnapshot();
+        $old = [];
+        $attributes = [];
+
+        foreach (self::TRACKED_KEYS as $key) {
+            if (($before[$key] ?? null) === ($after[$key] ?? null)) {
+                continue;
+            }
+
+            $old[$key] = $before[$key] ?? null;
+            $attributes[$key] = $after[$key] ?? null;
+        }
+
+        if ($attributes === []) {
+            return;
+        }
+
+        activity()
+            ->event('settings_updated')
+            ->withChanges(['attributes' => $attributes, 'old' => $old])
+            ->log('settings_updated');
+    }
+
     public static function getRoutePath(Panel $panel): string
     {
         return '/';
@@ -35,7 +98,7 @@ class ManageSettings extends SettingsPage
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->hasRole('admin') === true;
+        return auth()->user()?->can(PermissionName::SettingsManage->value) === true;
     }
 
     public static function shouldRegisterNavigation(): bool

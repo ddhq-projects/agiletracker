@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Enums\GroupMemberRole;
+use App\Enums\GroupType;
 use App\Enums\ItemStatus;
 use App\Models\Favorite;
+use App\Models\Group;
 use App\Models\Item;
 use App\Models\Label;
 use App\Models\User;
@@ -43,11 +46,52 @@ class DemoDataSeeder extends Seeder
         $carol = User::where('email', 'carol@example.com')->first();
         $otherUsers = [$alice, $bob, $carol];
 
+        // ─── Groups ──────────────────────────────────────────────────────
+        // One of each type shows the naming the access model expects: a
+        // project group names the project of an item, while teams and
+        // departments are organisational units.
+        $engineering = Group::firstOrCreate(
+            ['name' => 'Engineering'],
+            ['type' => GroupType::Department, 'description' => 'Everyone who ships code.'],
+        );
+
+        $platform = Group::firstOrCreate(
+            ['name' => 'Platform team'],
+            ['type' => GroupType::Team, 'parent_id' => $engineering->getKey()],
+        );
+
+        $coreProject = Group::firstOrCreate(
+            ['name' => 'AgileTracker Core'],
+            ['type' => GroupType::Project],
+        );
+
+        $mobileProject = Group::firstOrCreate(
+            ['name' => 'Mobile App'],
+            ['type' => GroupType::Project],
+        );
+
+        $engineering->users()->syncWithoutDetaching([
+            $admin->getKey() => ['role' => GroupMemberRole::Manager->value],
+        ]);
+        $platform->users()->syncWithoutDetaching([
+            $alice->getKey() => ['role' => GroupMemberRole::Manager->value],
+            $bob->getKey() => ['role' => GroupMemberRole::Member->value],
+            $carol->getKey() => ['role' => GroupMemberRole::Member->value],
+        ]);
+        $coreProject->users()->syncWithoutDetaching([
+            $alice->getKey() => ['role' => GroupMemberRole::Manager->value],
+            $bob->getKey() => ['role' => GroupMemberRole::Member->value],
+        ]);
+        $mobileProject->users()->syncWithoutDetaching([
+            $carol->getKey() => ['role' => GroupMemberRole::Member->value],
+        ]);
+
         // ─── Projects ────────────────────────────────────────────────────
         $project1 = Item::factory()->create([
             'title' => 'AgileTracker Core',
             'description' => 'Core functionality for the AgileTracker project management tool.',
             'status' => ItemStatus::InProgress,
+            'project_group_id' => $coreProject->getKey(),
         ]);
         $project1->labels()->sync([$labelEpic->id, $labelHigh->id]);
 
@@ -55,6 +99,7 @@ class DemoDataSeeder extends Seeder
             'title' => 'Mobile App',
             'description' => 'React Native mobile application for on-the-go task management.',
             'status' => ItemStatus::Todo,
+            'project_group_id' => $mobileProject->getKey(),
         ]);
         $project2->labels()->sync([$labelEpic->id, $labelMedium->id]);
 

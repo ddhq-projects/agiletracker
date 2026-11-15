@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Factories;
 
 use App\Enums\ItemStatus;
+use App\Enums\ItemVisibility;
 use App\Models\Item;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -22,10 +23,18 @@ class ItemFactory extends Factory
             'title' => fake()->sentence(4),
             'description' => fake()->boolean(60) ? fake()->sentence(10) : null,
             'is_epic' => false,
+            // Items created by the application start restricted; the factory
+            // models the historical, public rows unless a test opts in.
+            'visibility' => ItemVisibility::Public,
             'due_date' => fake()->boolean(40) ? now()->addDays(rand(1, 30))->toDateString() : null,
             // Leave the position empty: Item assigns the next value in the column on create.
             'position' => null,
         ];
+    }
+
+    public function restricted(): static
+    {
+        return $this->state(fn (): array => ['visibility' => ItemVisibility::Restricted]);
     }
 
     public function epic(): static

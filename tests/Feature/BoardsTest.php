@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Gate;
 use Livewire\Livewire;
 
 beforeEach(function () {
-    actingAsUser();
+    actingAsManager();
     Filament::setCurrentPanel(Filament::getPanel('main'));
 });
 
@@ -222,7 +222,7 @@ test('the board filters narrow the cards by assignee and label', function () {
     $board = makeBoardWithColumns(['To Do']);
     $column = $board->columns()->first();
 
-    $user = actingAsUser();
+    $user = actingAsManager();
     $other = User::factory()->create();
 
     $label = Label::create(['name' => 'Bug']);

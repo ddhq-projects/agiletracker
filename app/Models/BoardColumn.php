@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\DB;
 use Relaticle\Flowforge\Services\DecimalPosition;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 /**
  * One stage of a board. Columns are editable per board, so two boards can
@@ -18,7 +20,7 @@ use Relaticle\Flowforge\Services\DecimalPosition;
  */
 class BoardColumn extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     /**
      * @var list<string>
@@ -87,6 +89,14 @@ class BoardColumn extends Model
                 }
             });
         });
+    }
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'color', 'wip_limit'])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges();
     }
 
     // ─── Relationships ────────────────────────────────────────────────────────

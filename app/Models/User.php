@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\GroupMemberRole;
+use App\Enums\RoleName;
 use App\Models\Concerns\Favoritable;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
@@ -16,11 +18,14 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Relaticle\Comments\Concerns\CanComment;
 use Relaticle\Comments\Contracts\Commentator;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
+use Spatie\Permission\Models\Role;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements Commentator, FilamentUser
 {
-    use CanComment, Favoritable, HasApiTokens, HasFactory, HasRoles, Notifiable;
+    use CanComment, Favoritable, HasApiTokens, HasFactory, HasRoles, LogsActivity, Notifiable;
 
     protected $fillable = ['name', 'email', 'password'];
 
@@ -37,6 +42,21 @@ class User extends Authenticatable implements Commentator, FilamentUser
             'settings' => $this->hasRole('admin'),
             default => true,
         };
+    }
+
+    /**
+     * A user always holds one base role: anything created without an explicit
+     * role starts as `user`.
+     */
+    protected static function booted(): void
+    {
+        static::created(function (User $user): void {
+            if ($user->roles()->exists()) {
+                return;
+            }
+
+            $user->assignRole(Role::findOrCreate(RoleName::User->value, 'web'));
+        });
     }
 
     public function assignedItems(): HasMany
@@ -67,5 +87,33 @@ class User extends Authenticatable implements Commentator, FilamentUser
     public function favorites(): HasMany
     {
         return $this->hasMany(Favorite::class);
+    }
+
+    // ─── Groups ───────────────────────────────────────────────────────────────
+
+    public function groups(): BelongsToMany
+    {
+        return $this->belongsToMany(Group::class, 'group_user')
+            ->withPivot('role')
+            ->withTimestamps();
+    }
+
+    public function managedGroups(): BelongsToMany
+    {
+        return $this->groups()->wherePivot('role', GroupMemberRole::Manager->value);
+    }
+
+    // ─── Activity log ─────────────────────────────────────────────────────────
+
+    /**
+     * Only identity fields are tracked. Role changes are a separate
+     * `roles_updated` event and passwords never reach the log at all.
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'email'])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges();
     }
 }

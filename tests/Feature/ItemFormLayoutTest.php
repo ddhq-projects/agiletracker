@@ -60,7 +60,7 @@ test('the rail starts with the form actions and then the reference fields', func
         ->map(fn (Section $section): string => (string) $section->getHeading())
         ->all();
 
-    expect($headings)->toBe(['Workflow', 'Participants']);
+    expect($headings)->toBe(['Workflow', 'Participants', 'Access']);
 });
 
 test('the rail buttons are the page s own form actions', function () {

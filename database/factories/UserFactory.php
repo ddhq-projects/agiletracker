@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Actions\AssignUserRole;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -31,6 +32,17 @@ class UserFactory extends Factory
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
         ];
+    }
+
+    /**
+     * Every user holds one base role; the factory only ensures the role exists
+     * by the time a test asserts on it.
+     */
+    public function configure(): static
+    {
+        return $this->afterCreating(function (User $user): void {
+            app(AssignUserRole::class)->assignDefault($user);
+        });
     }
 
     /**

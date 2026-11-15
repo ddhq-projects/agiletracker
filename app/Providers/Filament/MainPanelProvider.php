@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Enums\PermissionName;
 use App\Filament\Pages\Dashboard;
 use Filament\Actions\Action;
 use Filament\Http\Middleware\Authenticate;
@@ -65,7 +66,7 @@ class MainPanelProvider extends PanelProvider
                     ->label('Settings')
                     ->url(fn (): string => route('filament.settings.pages.manage-settings'))
                     ->icon('heroicon-o-cog-6-tooth')
-                    ->visible(fn (): bool => auth()->user()?->hasRole('admin') === true),
+                    ->visible(fn (): bool => auth()->user()?->can(PermissionName::SettingsManage->value) === true),
             ])
             ->middleware([
                 EncryptCookies::class,

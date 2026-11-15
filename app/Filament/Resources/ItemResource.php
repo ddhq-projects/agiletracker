@@ -2,11 +2,15 @@
 
 namespace App\Filament\Resources;
 
+use App\Access\ItemAccess;
 use App\Actions\AddItemsToBoard;
 use App\Enums\ItemStatus;
+use App\Enums\ItemVisibility;
+use App\Enums\PermissionName;
 use App\Filament\Resources\ItemResource\Pages;
 use App\Filament\Resources\ItemResource\RelationManagers;
 use App\Models\Board;
+use App\Models\Group as GroupModel;
 use App\Models\Item;
 use App\Models\Label;
 use App\Models\User;
@@ -28,7 +32,9 @@ use Filament\Schemas\Schema;
 use Filament\Support\Enums\Alignment;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Gate;
 use UnitEnum;
 
 class ItemResource extends Resource
@@ -43,7 +49,38 @@ class ItemResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+    /**
+     * Cached per user and item: the policy check runs once per rendered form
+     * instead of once per field.
+     *
+     * @var array<string, list<string>|null>
+     */
+    protected static array $updatableAttributesCache = [];
+
     // ─── Global search ────────────────────────────────────────────────────────
+
+    /**
+     * Everything below reads items through this query: the list, the record
+     * routes, global search and relation selects. An item the user cannot see
+     * simply does not exist for the UI and answers 404 on a direct URL.
+     */
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery()->with(['to', 'cc', 'accessGroups']);
+
+        $user = auth()->user();
+
+        if (! $user instanceof User) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return app(ItemAccess::class)->scopeVisibleTo($query, $user);
+    }
+
+    public static function getGlobalSearchEloquentQuery(): Builder
+    {
+        return static::getEloquentQuery();
+    }
 
     public static function getGlobalSearchResultTitle(Model $record): string
     {
@@ -87,9 +124,11 @@ class ItemResource extends Resource
                             ->schema([
                                 Forms\Components\TextInput::make('title')
                                     ->required()
-                                    ->maxLength(255),
+                                    ->maxLength(255)
+                                    ->disabled(fn (?Item $record): bool => static::isLimitedUpdater($record)),
 
-                                static::descriptionEditor(),
+                                static::descriptionEditor()
+                                    ->disabled(fn (?Item $record): bool => static::isLimitedUpdater($record)),
                             ]),
 
                         Section::make('Dates')
@@ -105,7 +144,8 @@ class ItemResource extends Resource
                                 Forms\Components\DatePicker::make('eta_date')
                                     ->label('ETA')
                                     ->nullable(),
-                            ]),
+                            ])
+                            ->disabled(fn (?Item $record): bool => static::isLimitedUpdater($record)),
 
                         Section::make('Meta')
                             ->collapsible()
@@ -113,7 +153,8 @@ class ItemResource extends Resource
                             ->schema([
                                 Forms\Components\KeyValue::make('meta')
                                     ->label('Meta'),
-                            ]),
+                            ])
+                            ->disabled(fn (?Item $record): bool => static::isLimitedUpdater($record)),
                     ])
                         ->columnSpan(['default' => 1, 'lg' => 2])
                         ->extraAttributes(['class' => 'min-w-0']),
@@ -136,13 +177,16 @@ class ItemResource extends Resource
                                     ->createOptionForm([
                                         Forms\Components\TextInput::make('name')->required(),
                                         Forms\Components\ColorPicker::make('color')->default('#6b7280'),
-                                    ]),
+                                    ])
+                                    ->disabled(fn (?Item $record): bool => static::isLimitedUpdater($record)),
 
                                 Forms\Components\Select::make('parent_id')
                                     ->label('Parent')
-                                    ->relationship('parent', 'title')
                                     ->searchable()
-                                    ->nullable(),
+                                    ->getSearchResultsUsing(fn (string $search, ?Item $record): array => static::parentOptions($search, $record))
+                                    ->getOptionLabelUsing(fn (mixed $value): ?string => static::parentLabel($value))
+                                    ->nullable()
+                                    ->disabled(fn (?Item $record): bool => static::isLimitedUpdater($record)),
                             ]),
 
                         Section::make('Participants')
@@ -168,19 +212,136 @@ class ItemResource extends Resource
                                     ->relationship('to', 'name')
                                     ->multiple()
                                     ->searchable()
-                                    ->preload(),
+                                    ->preload()
+                                    ->disabled(fn (?Item $record): bool => static::isLimitedUpdater($record)),
 
                                 Forms\Components\Select::make('cc')
                                     ->label('CC')
                                     ->relationship('cc', 'name')
                                     ->multiple()
                                     ->searchable()
-                                    ->preload(),
+                                    ->preload()
+                                    ->disabled(fn (?Item $record): bool => static::isLimitedUpdater($record)),
                             ]),
+
+                        static::accessSection(),
                     ])
                         ->columnSpan(['default' => 1, 'lg' => 1]),
                 ]),
         ]);
+    }
+
+    /**
+     * Who sees the item and who may change that. Visible only to the people
+     * allowed to manage access, so it never hints at a wider sharing model.
+     */
+    protected static function accessSection(): Section
+    {
+        return Section::make('Access')
+            ->collapsible()
+            ->schema([
+                Forms\Components\Select::make('project_group_id')
+                    ->label('Project')
+                    ->options(fn (): array => GroupModel::query()->projects()->orderBy('name')->pluck('name', 'id')->all())
+                    ->searchable()
+                    ->nullable(),
+
+                Forms\Components\Select::make('visibility')
+                    ->options(ItemVisibility::options())
+                    ->default(ItemVisibility::Restricted->value)
+                    ->required()
+                    ->helperText('A public item is visible to everyone; a restricted one only to its participants and their groups.'),
+
+                Forms\Components\Select::make('access_group_ids')
+                    ->label('Shared with groups')
+                    ->multiple()
+                    ->searchable()
+                    ->options(fn (): array => GroupModel::query()->orderBy('name')->pluck('name', 'id')->all())
+                    ->dehydrated(false),
+            ])
+            ->visible(fn (?Item $record): bool => static::canManageAccess($record));
+    }
+
+    public static function canManageAccess(?Item $record): bool
+    {
+        $user = auth()->user();
+
+        if (! $user instanceof User) {
+            return false;
+        }
+
+        if ($record === null) {
+            return $user->can(PermissionName::ItemsCreate->value);
+        }
+
+        return Gate::allows('manageAccess', $record);
+    }
+
+    /**
+     * The possible parents: only items the user can see, never the item
+     * itself. A hidden item cannot be discovered as a parent option.
+     *
+     * @return array<string, string>
+     */
+    public static function parentOptions(string $search, ?Item $record): array
+    {
+        return static::getEloquentQuery()
+            ->when($record instanceof Item, fn (Builder $query): Builder => $query->whereKeyNot($record->getKey()))
+            ->where('title', 'like', '%'.$search.'%')
+            ->orderBy('title')
+            ->limit(50)
+            ->pluck('title', 'id')
+            ->all();
+    }
+
+    public static function parentLabel(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        return static::getEloquentQuery()->whereKey($value)->value('title');
+    }
+
+    /**
+     * The assignee of a restricted item moves it along but does not rewrite it.
+     */
+    /**
+     * The assignee of a restricted item moves it along but does not rewrite it.
+     */
+    public static function isLimitedUpdater(?Item $record): bool
+    {
+        $attributes = static::updatableAttributes($record);
+
+        return $attributes !== false && $attributes !== null;
+    }
+
+    /**
+     * True when the user may change every field of the item.
+     */
+    public static function isFullyEditable(?Item $record): bool
+    {
+        return static::updatableAttributes($record) === null;
+    }
+
+    /**
+     * @return list<string>|null|false false when there is nothing to evaluate
+     */
+    protected static function updatableAttributes(?Item $record): array|false|null
+    {
+        $user = auth()->user();
+
+        if (! $record instanceof Item || ! $user instanceof User) {
+            return false;
+        }
+
+        $key = $user->getKey().':'.$record->getKey();
+
+        if (! array_key_exists($key, self::$updatableAttributesCache)) {
+            self::$updatableAttributesCache[$key] = app(ItemAccess::class)->updatableAttributes($user, $record);
+        }
+
+        return self::$updatableAttributesCache[$key];
     }
 
     /**
@@ -231,6 +392,24 @@ class ItemResource extends Resource
                             ->badge()
                             ->color(fn ($record) => $record->labels->first()?->color ?? 'gray')
                             ->placeholder('No labels'),
+                    ]),
+
+                Section::make('Access')
+                    ->columns(2)
+                    ->schema([
+                        Infolists\Components\TextEntry::make('visibility')
+                            ->badge()
+                            ->color(fn (Item $record): string => $record->isPublic() ? 'success' : 'warning'),
+
+                        Infolists\Components\TextEntry::make('projectGroup.name')
+                            ->label('Project')
+                            ->placeholder('—'),
+
+                        Infolists\Components\TextEntry::make('access_group_names')
+                            ->label('Shared with')
+                            ->state(fn (Item $record): string => $record->accessGroups->pluck('name')->join(', '))
+                            ->placeholder('—')
+                            ->columnSpanFull(),
                     ]),
 
                 Section::make('Boards')
@@ -316,6 +495,7 @@ class ItemResource extends Resource
         return Action::make('quickChange')
             ->label('Quick change')
             ->icon('heroicon-o-bolt')
+            ->visible(fn (Item $record): bool => static::isFullyEditable($record))
             ->fillForm(fn (Item $record): array => [
                 'status' => $record->status,
                 'assignee_id' => $record->assignee_id,
@@ -344,6 +524,8 @@ class ItemResource extends Resource
                     ->nullable(),
             ])
             ->action(function (Item $record, array $data): void {
+                Gate::authorize('update', $record);
+
                 $record->update([
                     'status' => $data['status'],
                     'assignee_id' => $data['assignee_id'] ?? null,
@@ -441,6 +623,7 @@ class ItemResource extends Resource
                 Action::make('addToBoard')
                     ->label('Add to board')
                     ->icon('heroicon-o-view-columns')
+                    ->visible(fn (Item $record): bool => Gate::allows('update', $record))
                     ->schema([
                         Forms\Components\Select::make('board_ids')
                             ->label('Boards')
@@ -449,6 +632,8 @@ class ItemResource extends Resource
                             ->required(),
                     ])
                     ->action(function (Item $record, array $data): void {
+                        Gate::authorize('update', $record);
+
                         $added = 0;
                         $skipped = 0;
 
@@ -472,6 +657,7 @@ class ItemResource extends Resource
             ->bulkActions([
                 BulkAction::make('assign')
                     ->label('Assign to…')
+                    ->authorizeIndividualRecords('update')
                     ->form([
                         Forms\Components\Select::make('assignee_id')
                             ->label('Assignee')
@@ -484,6 +670,7 @@ class ItemResource extends Resource
                 BulkAction::make('addToBoard')
                     ->label('Add to board')
                     ->icon('heroicon-o-view-columns')
+                    ->authorizeIndividualRecords('update')
                     ->schema([
                         Forms\Components\Select::make('board_ids')
                             ->label('Boards')
@@ -499,7 +686,7 @@ class ItemResource extends Resource
                                 continue;
                             }
 
-                            app(AddItemsToBoard::class)($board, $itemIds);
+                            app(AddItemsToBoard::class)($board, $itemIds, user: auth()->user());
                         }
 
                         Notification::make()

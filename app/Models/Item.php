@@ -4,23 +4,29 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Access\ItemAccess;
 use App\Enums\ItemStatus;
+use App\Enums\ItemVisibility;
 use App\Models\Concerns\Favoritable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Relaticle\ActivityLog\Concerns\InteractsWithTimeline;
+use Relaticle\ActivityLog\Contracts\HasTimeline;
+use Relaticle\ActivityLog\Timeline\TimelineBuilder;
 use Relaticle\Comments\Concerns\HasComments;
 use Relaticle\Comments\Contracts\Commentable;
 use Relaticle\Flowforge\Services\DecimalPosition;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
-class Item extends Model implements Commentable
+class Item extends Model implements Commentable, HasTimeline
 {
-    use Favoritable, HasComments, HasFactory, LogsActivity, SoftDeletes;
+    use Favoritable, HasComments, HasFactory, InteractsWithTimeline, LogsActivity, SoftDeletes;
 
     /**
      * A new model carries the default workflow state from the start, so the
@@ -39,6 +45,8 @@ class Item extends Model implements Commentable
         'is_epic',
         'meta',
         'parent_id',
+        'project_group_id',
+        'visibility',
         'assignee_id',
         'reporter_id',
         'due_date',
@@ -53,6 +61,7 @@ class Item extends Model implements Commentable
 
     protected $casts = [
         'status' => ItemStatus::class,
+        'visibility' => ItemVisibility::class,
         'is_epic' => 'boolean',
         'due_date' => 'date',
         'start_date' => 'date',
@@ -70,6 +79,10 @@ class Item extends Model implements Commentable
     protected static function booted(): void
     {
         static::creating(function (Item $item): void {
+            if ($item->visibility === null) {
+                $item->visibility = ItemVisibility::Restricted;
+            }
+
             if ($item->position !== null) {
                 return;
             }
@@ -140,6 +153,28 @@ class Item extends Model implements Commentable
         return $this->belongsToMany(User::class, 'item_cc');
     }
 
+    public function projectGroup(): BelongsTo
+    {
+        return $this->belongsTo(Group::class, 'project_group_id');
+    }
+
+    public function accessGroups(): BelongsToMany
+    {
+        return $this->belongsToMany(Group::class, 'item_group')->withTimestamps();
+    }
+
+    // ─── Visibility ───────────────────────────────────────────────────────────
+
+    public function isPublic(): bool
+    {
+        return $this->visibility === ItemVisibility::Public;
+    }
+
+    public function isRestricted(): bool
+    {
+        return ! $this->isPublic();
+    }
+
     // ─── Scopes ───────────────────────────────────────────────────────────────
 
     public function scopeRootLevel($query)
@@ -157,12 +192,38 @@ class Item extends Model implements Commentable
         return $query->whereHas('labels', fn ($q) => $q->where('name', $labelName));
     }
 
+    /**
+     * The row-level perimeter, delegating to the single access service.
+     */
+    public function scopeVisibleTo(Builder $query, ?User $user): Builder
+    {
+        if (! $user instanceof User) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return app(ItemAccess::class)->scopeVisibleTo($query, $user);
+    }
+
     // ─── Activity log ─────────────────────────────────────────────────────────
+
+    public function timeline(): TimelineBuilder
+    {
+        return TimelineBuilder::make($this)->fromActivityLog();
+    }
 
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['title', 'status', 'assignee_id', 'parent_id', 'meta', 'is_epic'])
+            ->logOnly([
+                'title',
+                'status',
+                'assignee_id',
+                'parent_id',
+                'meta',
+                'is_epic',
+                'project_group_id',
+                'visibility',
+            ])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
     }

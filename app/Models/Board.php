@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 /**
  * A collection of items with its own columns. Boards are independent of the
@@ -18,7 +20,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class Board extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     /**
      * @var list<string>
@@ -68,6 +70,17 @@ class Board extends Model
     /**
      * The columns a board starts with when it is created through the UI.
      *
+     * @return list<array{name: string, color: string, position: int}>
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['name', 'description'])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges();
+    }
+
+    /**
      * @return list<array{name: string, color: string, position: int}>
      */
     public static function defaultColumns(): array

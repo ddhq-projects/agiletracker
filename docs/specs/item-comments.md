@@ -61,6 +61,17 @@ Item discussions run on `relaticle/comments` 1.x over the application's existing
 - **The published package migrations gained `down()`.** The vendor stubs have no rollback; a rollback
   would have silently left four tables behind.
 
+## Item perimeter and activity
+
+- A comment is only reachable through its item. `CommentPolicy::view` asks for `comments.view` **and**
+  `ItemPolicy::view` of the parent; `update`/`delete` require `comments.moderate` or authorship on
+  top of it; `create` checks the item of the draft when it already carries one. The REST
+  `perimeterQuery` filters comments through the same item scope, so a comment of a hidden item
+  cannot be read, edited or deleted, and the 422/Lomkit denial is the same one the item gets.
+- `App\Models\Comment` logs `body`, `edited_at` and `pinned_at` through Spatie activitylog, so an
+  edit now leaves a trace — on the Comment as its own subject. The item timeline reads the item's own
+  log, so a comment change does not appear in it (see [access-control.md](access-control.md)).
+
 ## Known limitations / next steps
 
 - The comment thread is rendered inline on the item view only; there is no comments surface on the
@@ -72,4 +83,5 @@ Item discussions run on `relaticle/comments` 1.x over the application's existing
 - Threads are capped at the package default of depth 2 (a root comment plus one reply level).
 - Plain-text `@name` mentions written before the package are stored as text and generate no
   notification; there is no historical notification backfill.
-- Comment editing does not yet record an entry in the item activity log.
+- Comment attachments are still served from a public disk, so a hidden item's attachment is only as
+  private as its URL (see [access-control.md](access-control.md)).
