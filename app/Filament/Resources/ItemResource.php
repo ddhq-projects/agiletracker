@@ -156,50 +156,16 @@ class ItemResource extends Resource
     public static function infolist(Schema $schema): Schema
     {
         return $schema
+            ->columns(1)
             ->components([
-                Section::make('General')
-                    ->columnSpanFull()
-                    ->columns(2)
+                Section::make('Assignees')
                     ->schema([
-                        Infolists\Components\TextEntry::make('description')
-                            ->hiddenLabel()
-                            ->markdown()
-                            ->default('No description.')
-                            ->columnSpanFull(),
-
-                        Infolists\Components\KeyValueEntry::make('meta')
-                            ->label('Meta')
-                            ->columnSpanFull()
-                            ->visible(fn (?Item $record): bool => filled($record?->meta)),
-
-                        Infolists\Components\TextEntry::make('parent.title')
-                            ->label('Parent')
-                            ->url(fn (?Item $record): ?string => $record?->parent
-                                ? ItemResource::getUrl('view', ['record' => $record->parent])
-                                : null
-                            )
-                            ->default('—'),
-
-                        Infolists\Components\TextEntry::make('labels.name')
-                            ->label('Labels')
-                            ->badge()
-                            ->color(fn ($record) => $record->labels->first()?->color ?? 'gray')
-                            ->default('—'),
-
-                        Infolists\Components\TextEntry::make('status')
-                            ->label('Status')
-                            ->badge(),
-
-                    ]),
-
-                Section::make('Participants')
-                    ->schema([
-                        Infolists\Components\TextEntry::make('reporter.name')
-                            ->label('From')
-                            ->default('—'),
-
                         Infolists\Components\TextEntry::make('assignee.name')
-                            ->label('Responsible')
+                            ->label('Assignee')
+                            ->placeholder('Unassigned'),
+
+                        Infolists\Components\TextEntry::make('reporter.name')
+                            ->label('Reported by')
                             ->default('—'),
 
                         Infolists\Components\TextEntry::make('to_names')
@@ -213,8 +179,16 @@ class ItemResource extends Resource
                             ->visible(fn (?Item $record): bool => filled($record?->cc)),
                     ]),
 
+                Section::make('Labels')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('labels.name')
+                            ->hiddenLabel()
+                            ->badge()
+                            ->color(fn ($record) => $record->labels->first()?->color ?? 'gray')
+                            ->placeholder('No labels'),
+                    ]),
+
                 Section::make('Dates')
-                    ->columns(2)
                     ->schema([
                         Infolists\Components\TextEntry::make('due_date')
                             ->label('Due date')
@@ -240,6 +214,24 @@ class ItemResource extends Resource
                             ->label('ETA')
                             ->state(fn ($record) => $record->eta_date?->format('M j, Y') ?? '—')
                             ->visible(fn ($record) => $record->eta_date !== null),
+                    ])
+                    ->visible(fn (?Item $record): bool => $record !== null && (
+                        $record->due_date !== null
+                        || $record->start_date !== null
+                        || $record->end_date !== null
+                        || $record->etd_date !== null
+                        || $record->eta_date !== null
+                    )),
+
+                Section::make('Details')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('parent.title')
+                            ->label('Parent')
+                            ->url(fn (?Item $record): ?string => $record?->parent
+                                ? ItemResource::getUrl('view', ['record' => $record->parent])
+                                : null
+                            )
+                            ->placeholder('—'),
 
                         Infolists\Components\TextEntry::make('created_at')
                             ->label('Created')
@@ -249,6 +241,14 @@ class ItemResource extends Resource
                             ->label('Updated')
                             ->dateTime('M j, Y H:i'),
                     ]),
+
+                Section::make('Meta')
+                    ->collapsed()
+                    ->schema([
+                        Infolists\Components\KeyValueEntry::make('meta')
+                            ->hiddenLabel(),
+                    ])
+                    ->visible(fn (?Item $record): bool => filled($record?->meta)),
             ]);
     }
 

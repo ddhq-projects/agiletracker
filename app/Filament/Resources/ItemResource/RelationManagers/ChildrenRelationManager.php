@@ -17,6 +17,15 @@ class ChildrenRelationManager extends RelationManager
 
     protected static ?string $title = 'Sub-items';
 
+    /**
+     * The table sits inside a collapsible Section that already carries the
+     * title, so the table must not repeat it.
+     */
+    protected function getTableHeading(): ?string
+    {
+        return '';
+    }
+
     public function form(Schema $schema): Schema
     {
         return $schema->schema([

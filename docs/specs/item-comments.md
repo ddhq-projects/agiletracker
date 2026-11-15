@@ -25,8 +25,10 @@ Item discussions run on `relaticle/comments` 1.x over the application's existing
   `User::comments()` is a `MorphMany` through `commenter`.
 - `Item` implements `Commentable` with `HasComments`, `User` implements `Commentator` with
   `CanComment`.
-- `CommentsPlugin` is registered on the main panel, and `ViewItem` has `CommentsAction` in its header
-  actions; the old `CommentsRelationManager` was removed.
+- `CommentsPlugin` is registered on the main panel. The item view page (`ViewItem`) is a
+  two-column layout: the description, a collapsible **Sub-items** section and the comment thread
+  inline in the wide column, `ItemResource::infolist()` as the reference sidebar. The old
+  `CommentsRelationManager` and the `CommentsAction` slide-over were removed.
 - `App\Policies\CommentPolicy` is the configured package policy: authenticated users may view and
   create; only the author or an `admin` may edit, delete or pin; `reply` follows the package's depth
   limit.
@@ -61,6 +63,8 @@ Item discussions run on `relaticle/comments` 1.x over the application's existing
 
 ## Known limitations / next steps
 
+- The comment thread is rendered inline on the item view only; there is no comments surface on the
+  board or in the table.
 - No attachments, real-time broadcasting, subscriptions or notifications: they are off by design and
   need their own storage/notification decisions.
 - Threads are capped at the package default of depth 2 (a root comment plus one reply level).

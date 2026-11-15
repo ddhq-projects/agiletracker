@@ -136,10 +136,16 @@ Use Flowforge with a native status and decimal ordering, migrate Comments in pla
 
 ### 3. Comments
 
-- `/i/{id}` — the header has a Comments action with a count badge; the slide-over shows the thread, the composer supports mentions and formatting, comments can be replied to, reacted to and pinned.
+- `/i/{id}` — the page is a two-column layout: the description, a collapsible Sub-items table and the
+  comment thread (with the composer) fill the wide left column, and the
+  assignees/labels/dates/details sidebar sits on the right. The composer supports mentions and
+  formatting, comments can be replied to, reacted to and pinned.
+- The Sub-items section sits between the description and the comments; collapsing it sticks for the
+  browser session and its table does not repeat the section title.
 - Write a comment with `<script>alert(1)</script>` in the body: the stored comment does not contain the script tag.
 - A non-author without the `admin` role cannot edit or delete another user's comment; the author and an admin can.
 - No attachment button, no notification or subscription UI.
+- [app/Filament/Resources/ItemResource/Pages/ViewItem.php](../../app/Filament/Resources/ItemResource/Pages/ViewItem.php) — the two-column content schema and the inline comments component.
 - [app/Models/Comment.php](../../app/Models/Comment.php) — polymorphic `item_id`/`user_id` compatibility layer and the `item()`/`author()` relations.
 
 ### 4. API

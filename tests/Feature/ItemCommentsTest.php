@@ -97,9 +97,19 @@ test('only the author or an admin may pin a comment', function () {
         ->and(Gate::forUser(User::factory()->create())->allows('pin', $comment))->toBeFalse();
 });
 
-test('the item view offers the comments action instead of the relation manager', function () {
+test('the item view lays out the item, its comments and the sidebar', function () {
     actingAsUser();
-    $item = Item::factory()->create();
+    $item = Item::factory()->create([
+        'title' => 'Board layout',
+        'description' => 'A **bold** plan',
+    ]);
 
-    $this->get("/i/{$item->id}")->assertOk()->assertSee('Comments');
+    $this->get("/i/{$item->id}")
+        ->assertOk()
+        ->assertSee('Board layout')
+        ->assertSee('<strong>bold</strong>', false)
+        ->assertSeeInOrder(['Board layout', 'Sub-items', 'Comments (0)'])
+        ->assertSee('Assignees')
+        ->assertSee('Labels')
+        ->assertSee('Details');
 });
