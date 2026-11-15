@@ -4,68 +4,109 @@ declare(strict_types=1);
 
 namespace App\Filament\Widgets;
 
-use App\Filament\Resources\ItemResource;
+use App\Actions\FavoriteOrderService;
+use App\Actions\FavoriteTarget;
+use App\Actions\ResolveFavoriteTarget;
+use App\Filament\Pages\Favorites;
 use App\Models\Favorite;
-use App\Models\Item;
 use App\Models\User;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Widgets\TableWidget as BaseWidget;
-use Illuminate\Database\Eloquent\Builder;
+use Filament\Widgets\Widget;
+use Illuminate\Support\Collection;
 
-class FavoritesWidget extends BaseWidget
+class FavoritesWidget extends Widget
 {
-    protected static ?string $heading = 'Favorites';
-
     protected int|string|array $columnSpan = 'full';
 
-    public function table(Table $table): Table
+    protected string $view = 'filament.widgets.favorites-widget';
+
+    /**
+     * Drag-and-drop from the cards. The dashboard only knows about the
+     * favorites it can currently link to, so the untouched ones keep their
+     * stored positions.
+     *
+     * @param  array<int, int|string>  $order
+     */
+    public function reorderFavorites(array $order): void
     {
-        return $table
-            ->query(fn (): Builder => Favorite::query()
-                ->where('user_id', auth()->id())
-                ->latest()
-                ->limit(3),
-            )
-            ->columns([
-                Tables\Columns\TextColumn::make('name')
-                    ->sortable()
-                    ->limit(60)
-                    ->url(fn (Favorite $record): ?string => match (true) {
-                        $record->url !== null => $record->url,
-                        $record->favoritable_type === Item::class => ItemResource::getUrl('view', ['record' => $record->favoritable_id]),
-                        $record->favoritable_type === User::class => null,
-                        default => null,
-                    })
-                    ->openUrlInNewTab(fn (Favorite $record): bool => $record->url !== null),
+        app(FavoriteOrderService::class)->reorder(
+            $this->currentUser(),
+            $order,
+            requireCompleteSet: false,
+        );
 
-                Tables\Columns\TextColumn::make('type_badge')
-                    ->label('Type')
-                    ->badge()
-                    ->state(fn (Favorite $record): string => match (true) {
-                        $record->url !== null => 'Link',
-                        $record->favoritable_type !== null => class_basename($record->favoritable_type),
-                        default => 'Unknown',
-                    })
-                    ->colors([
-                        'success' => 'Link',
-                        'primary' => 'Item',
-                        'warning' => 'User',
-                    ]),
+        $this->dispatch('refresh-sidebar');
+    }
 
-                Tables\Columns\TextColumn::make('details')
-                    ->label('Details')
-                    ->state(fn (Favorite $record): string => $record->url
-                        ? parse_url($record->url, PHP_URL_HOST) ?? $record->url
-                        : (string) ($record->favoritable?->title ?? $record->favoritable?->name ?? '—'))
-                    ->url(fn (Favorite $record): ?string => match (true) {
-                        $record->url !== null => $record->url,
-                        $record->favoritable_type === Item::class => ItemResource::getUrl('view', ['record' => $record->favoritable_id]),
-                        $record->favoritable_type === User::class => null,
-                        default => null,
-                    })
-                    ->openUrlInNewTab(fn (Favorite $record): bool => $record->url !== null),
+    /**
+     * Keyboard and touch friendly alternative to dragging a card.
+     */
+    public function moveFavorite(int $favoriteId, string $direction): void
+    {
+        if (! in_array($direction, ['up', 'down'], true)) {
+            return;
+        }
+
+        $order = $this->availableFavorites()
+            ->pluck('favorite.id')
+            ->map(static fn (int|string $id): int => (int) $id)
+            ->all();
+
+        $index = array_search($favoriteId, $order, true);
+
+        if ($index === false) {
+            return;
+        }
+
+        $target = $direction === 'up' ? $index - 1 : $index + 1;
+
+        if (! array_key_exists($target, $order)) {
+            return;
+        }
+
+        [$order[$index], $order[$target]] = [$order[$target], $order[$index]];
+
+        $this->reorderFavorites($order);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function getViewData(): array
+    {
+        return [
+            'favorites' => $this->availableFavorites(),
+            'favoritesUrl' => Favorites::getUrl(),
+        ];
+    }
+
+    /**
+     * @return Collection<int, array{favorite: Favorite, target: FavoriteTarget}>
+     */
+    protected function availableFavorites(): Collection
+    {
+        $user = $this->currentUser();
+
+        $resolver = app(ResolveFavoriteTarget::class);
+
+        return Favorite::query()
+            ->where('user_id', $user->id)
+            ->ordered()
+            ->with('favoritable')
+            ->get()
+            ->map(fn (Favorite $favorite): array => [
+                'favorite' => $favorite,
+                'target' => $resolver($favorite, $user),
             ])
-            ->paginated(false);
+            ->filter(fn (array $row): bool => $row['target']->isAvailable())
+            ->values();
+    }
+
+    protected function currentUser(): User
+    {
+        $user = auth()->user();
+
+        abort_unless($user instanceof User, 403);
+
+        return $user;
     }
 }

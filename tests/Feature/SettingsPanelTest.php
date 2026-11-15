@@ -125,6 +125,6 @@ test('non-admin keeps access to the working pages of the main panel', function (
     '/labels',
     '/inbox',
     '/boards',
-    '/favorite',
+    '/favorites',
     '/sent',
 ]);

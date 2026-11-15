@@ -7,6 +7,7 @@ use Filament\Actions\Action;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Enums\Width;
@@ -54,8 +55,10 @@ class MainPanelProvider extends PanelProvider
                 Dashboard::class,
             ])
             ->navigationGroups([
-                'My',
-                'Collections',
+                NavigationGroup::make('Favorites')
+                    ->icon('heroicon-o-star'),
+                NavigationGroup::make('My'),
+                NavigationGroup::make('Collections'),
             ])
             ->userMenuItems([
                 Action::make('settings')
