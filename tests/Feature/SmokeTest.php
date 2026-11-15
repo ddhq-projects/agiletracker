@@ -34,12 +34,10 @@ test('guest cannot access admin pages', function (string $path) {
     $response->assertRedirect('/login');
 })->with([
     '/i',
-    '/users',
-    '/manage-settings',
     '/labels',
     '/inbox',
-    '/kanban-board',
-    '/favorite',
+    '/boards',
+    '/favorites',
     '/sent',
 ]);
 
@@ -54,13 +52,18 @@ test('authenticated user can access panel pages', function (string $path) {
 })->with([
     '/',
     '/i',
-    '/users',
     '/labels',
     '/inbox',
-    '/kanban-board',
-    '/favorite',
+    '/boards',
+    '/favorites',
     '/sent',
 ]);
+
+test('the legacy favorite url redirects to the canonical favorites page', function () {
+    actingAsUser();
+
+    $this->get('/favorite')->assertRedirect('/favorites');
+});
 
 // ─── 404 for unknown routes ──────────────────────────────────────────────
 

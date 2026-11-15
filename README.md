@@ -85,8 +85,9 @@ The `.agents/` directory is **version-controlled** — commit it to share agent 
 app/
   Filament/
     Pages/
-      KanbanBoard.php           ← Drag-and-drop Kanban view
+      BoardView.php             ← One board: per-board columns and drag & drop
     Resources/
+      BoardResource.php         ← Boards list, create/edit, column editor
       ItemResource.php          ← Main resource (Tasks / Epics / Projects)
       ItemResource/
         Pages/
@@ -122,10 +123,10 @@ database/
     RolesAndPermissionsSeeder.php   ← admin / manager / member roles + default admin user
 
 resources/
-  views/
+  css/
     filament/
-      pages/
-        kanban-board.blade.php  ← Blade + Alpine.js drag-and-drop Kanban
+      admin/
+        theme.css  ← Filament + Flowforge theme
 ```
 
 ---
@@ -137,7 +138,7 @@ resources/
 | Single `items` table with `type` column | Simpler than full polymorphism; easy to convert between types |
 | `parent_id` self-reference | Builds Project → Epic → Task hierarchy with one join |
 | FilamentPHP v3 Resources | Handles CRUD, filters, relations, global search with minimal boilerplate |
-| HTML5 drag events + Livewire | No extra JS library; status changes persist via `#[On('item-moved')]` |
+| Flowforge boards | Each board owns its columns; cards are `board_items` rows with a per-board column and decimal position, so an item can be on several boards at once |
 | Spatie Permission | Role-gated panel access; expandable to per-resource policies |
 
 ---

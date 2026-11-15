@@ -10,12 +10,22 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class ChildrenRelationManager extends RelationManager
 {
     protected static string $relationship = 'children';
 
     protected static ?string $title = 'Sub-items';
+
+    /**
+     * The table sits inside a collapsible Section that already carries the
+     * title, so the table must not repeat it.
+     */
+    protected function getTableHeading(): ?string
+    {
+        return '';
+    }
 
     public function form(Schema $schema): Schema
     {
@@ -39,6 +49,7 @@ class ChildrenRelationManager extends RelationManager
     public function table(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->visibleTo(auth()->user()))
             ->columns([
                 Tables\Columns\TextColumn::make('labels.name')
                     ->label('Labels')

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Filament\Pages\ManageSettings;
+use App\Filament\Settings\Pages\ManageSettings;
 use App\Models\User;
 use App\Settings\GeneralSettings;
 use Livewire\Livewire;
@@ -14,7 +14,7 @@ test('admin can access settings page', function () {
     $user->assignRole('admin');
 
     $this->actingAs($user)
-        ->get('/manage-settings')
+        ->get('/settings')
         ->assertOk();
 });
 
@@ -24,7 +24,7 @@ test('non-admin cannot access settings page', function () {
     $user->assignRole('manager');
 
     $this->actingAs($user)
-        ->get('/manage-settings')
+        ->get('/settings')
         ->assertForbidden();
 });
 

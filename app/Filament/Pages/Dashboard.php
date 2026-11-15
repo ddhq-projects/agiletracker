@@ -23,9 +23,9 @@ class Dashboard extends BaseDashboard
     public function getWidgets(): array
     {
         return [
+            FavoritesWidget::class,
             InboxWidget::class,
             SentWidget::class,
-            FavoritesWidget::class,
         ];
     }
 

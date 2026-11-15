@@ -18,6 +18,7 @@ class MyTasksWidget extends BaseWidget
         return $table
             ->query(
                 Item::query()
+                    ->visibleTo(auth()->user())
                     ->where('assignee_id', auth()->id())
                     ->orderBy('due_date')
                     ->limit(3)

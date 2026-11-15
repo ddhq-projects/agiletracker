@@ -85,7 +85,7 @@ test('the type of a legacy item without meta reads as null', function () {
 // ─── Mutate ──────────────────────────────────────────────────────────────
 
 test('create fills the reporter, keeps meta keys and syncs labels', function () {
-    $user = actingAsApi(['items:write']);
+    $user = actingAsApi(['items:write'], actingAsManagerSolo());
     $labels = Label::create(['name' => 'one']);
     $second = Label::create(['name' => 'two']);
 
@@ -119,7 +119,7 @@ test('create fills the reporter, keeps meta keys and syncs labels', function () 
 });
 
 test('a hybrid task container is a task with is_epic true', function () {
-    actingAsApi(['items:write']);
+    actingAsApi(['items:write'], actingAsManagerSolo());
 
     $this->postJson('/api/v1/items/mutate', [
         'mutate' => [['operation' => 'create', 'attributes' => ['title' => 'Hybrid', 'type' => 'task', 'is_epic' => true]]],
@@ -130,7 +130,7 @@ test('a hybrid task container is a task with is_epic true', function () {
 });
 
 test('the type keeps the other meta keys on update', function () {
-    actingAsApi(['items:write']);
+    actingAsApi(['items:write'], actingAsManagerSolo());
     $item = Item::factory()->create(['meta' => ['type' => 'task', 'team' => 'core']]);
 
     $this->postJson('/api/v1/items/mutate', [
@@ -141,7 +141,7 @@ test('the type keeps the other meta keys on update', function () {
 });
 
 test('create requires a title and a known type', function () {
-    actingAsApi(['items:write']);
+    actingAsApi(['items:write'], actingAsManagerSolo());
 
     $this->postJson('/api/v1/items/mutate', [
         'mutate' => [['operation' => 'create', 'attributes' => ['type' => 'task']]],
@@ -157,7 +157,7 @@ test('create requires a title and a known type', function () {
 });
 
 test('reporter, meta and nested hierarchy writes are refused', function () {
-    actingAsApi(['items:write']);
+    actingAsApi(['items:write'], actingAsManagerSolo());
     $parent = Item::factory()->create(['meta' => ['type' => 'task']]);
 
     $this->postJson('/api/v1/items/mutate', [
@@ -178,7 +178,7 @@ test('reporter, meta and nested hierarchy writes are refused', function () {
 });
 
 test('an update cannot point an item at itself or a descendant', function () {
-    actingAsApi(['items:write']);
+    actingAsApi(['items:write'], actingAsManagerSolo());
     $root = Item::factory()->create(['meta' => ['type' => 'task']]);
     $child = Item::factory()->childOf($root)->create(['meta' => ['type' => 'task']]);
     $grandchild = Item::factory()->childOf($child)->create(['meta' => ['type' => 'task']]);
@@ -196,7 +196,7 @@ test('an update cannot point an item at itself or a descendant', function () {
 });
 
 test('the parent must exist and not be trashed', function () {
-    actingAsApi(['items:write']);
+    actingAsApi(['items:write'], actingAsManagerSolo());
     $parent = Item::factory()->create(['meta' => ['type' => 'task']]);
     $parent->delete();
 
@@ -206,7 +206,7 @@ test('the parent must exist and not be trashed', function () {
 });
 
 test('updating is_epic leaves the type and the hierarchy untouched', function () {
-    actingAsApi(['items:write']);
+    actingAsApi(['items:write'], actingAsManagerSolo());
     $parent = Item::factory()->create(['meta' => ['type' => 'task']]);
     $item = Item::factory()->childOf($parent)->create(['meta' => ['type' => 'bug']]);
 
@@ -222,7 +222,7 @@ test('updating is_epic leaves the type and the hierarchy untouched', function ()
 // ─── Destroy ─────────────────────────────────────────────────────────────
 
 test('a leaf item is soft deleted', function () {
-    actingAsApi(['items:write', 'items:read']);
+    actingAsApi(['items:write', 'items:read'], actingAsManagerSolo());
     $item = Item::factory()->create(['meta' => ['type' => 'task']]);
 
     $response = $this->deleteJson('/api/v1/items', ['resources' => [$item->id]])->assertOk();
@@ -234,7 +234,7 @@ test('a leaf item is soft deleted', function () {
 });
 
 test('an item with active children answers 409 and keeps the row', function () {
-    actingAsApi(['items:write']);
+    actingAsApi(['items:write'], actingAsManagerSolo());
     $parent = Item::factory()->create(['meta' => ['type' => 'task']]);
     Item::factory()->childOf($parent)->create(['meta' => ['type' => 'task']]);
 
@@ -245,7 +245,7 @@ test('an item with active children answers 409 and keeps the row', function () {
 });
 
 test('trashed items are refused as delete targets', function () {
-    actingAsApi(['items:write']);
+    actingAsApi(['items:write'], actingAsManagerSolo());
     $item = Item::factory()->create(['meta' => ['type' => 'task']]);
     $item->delete();
 
@@ -257,7 +257,7 @@ test('trashed items are refused as delete targets', function () {
 // ─── Assign action ───────────────────────────────────────────────────────
 
 test('the assign action sets, clears and reports the impacted rows', function () {
-    actingAsApi(['items:write', 'items:read']);
+    actingAsApi(['items:write', 'items:read'], actingAsManagerSolo());
     $items = Item::factory()->count(3)->create(['meta' => ['type' => 'task']]);
     $user = User::factory()->create();
 
@@ -278,7 +278,7 @@ test('the assign action sets, clears and reports the impacted rows', function ()
 });
 
 test('the assign action refuses more than 100 resources and any search', function () {
-    actingAsApi(['items:write']);
+    actingAsApi(['items:write'], actingAsManagerSolo());
     $items = Item::factory()->count(101)->create(['meta' => ['type' => 'task']]);
 
     $this->postJson('/api/v1/items/actions/assign', [
@@ -293,7 +293,7 @@ test('the assign action refuses more than 100 resources and any search', functio
 });
 
 test('the assign action rolls back every row when one fails', function () {
-    actingAsApi(['items:write']);
+    actingAsApi(['items:write'], actingAsManagerSolo());
     $items = Item::factory()->count(2)->create(['meta' => ['type' => 'task']]);
     $user = User::factory()->create();
 
@@ -306,7 +306,7 @@ test('the assign action rolls back every row when one fails', function () {
 });
 
 test('an unknown item action is a 404 for an authorized user', function () {
-    actingAsApi(['items:write']);
+    actingAsApi(['items:write'], actingAsManagerSolo());
 
     $this->postJson('/api/v1/items/actions/unknown', [])->assertNotFound();
 });

@@ -7,6 +7,9 @@ namespace App\Filament\Pages;
 use App\Filament\Resources\ItemResource;
 use App\Models\Item;
 use BackedEnum;
+use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Pages\Page;
 use Filament\Schemas\Components\EmbeddedTable;
@@ -33,13 +36,20 @@ class Sent extends Page implements HasTable
     public function table(Table $table): Table
     {
         return $table
-            ->query(fn (): Builder => Item::query()->where('reporter_id', auth()->id()))
+            ->query(fn (): Builder => Item::query()
+                ->visibleTo(auth()->user())
+                ->with('labels')
+                ->where('reporter_id', auth()->id())
+            )
             ->defaultSort('position')
             ->columns([
                 Tables\Columns\TextColumn::make('title')
                     ->searchable()
                     ->sortable()
                     ->limit(60)
+                    ->description(fn (Item $record) => $record->labels->isEmpty()
+                        ? null
+                        : view('filament.tables.item-labels', ['labels' => $record->labels]))
                     ->url(fn (Item $record): string => ItemResource::getUrl('view', ['record' => $record])),
 
                 Tables\Columns\TextColumn::make('assignee.name')
@@ -50,16 +60,6 @@ class Sent extends Page implements HasTable
                     ->label('CC')
                     ->badge()
                     ->state(fn (Item $record) => $record->cc->pluck('name')->join(', ')),
-
-                Tables\Columns\TextColumn::make('labels.name')
-                    ->label('Labels')
-                    ->badge()
-                    ->color(fn ($record) => $record->labels->first()?->color ?? 'gray'),
-
-                Tables\Columns\TextColumn::make('due_date')
-                    ->date()
-                    ->sortable()
-                    ->color(fn ($record) => $record->due_date?->isPast() ? 'danger' : null),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('type')
@@ -87,8 +87,22 @@ class Sent extends Page implements HasTable
                     ]),
             ])
             ->actions([
-                EditAction::make()
-                    ->url(fn (Item $record): string => ItemResource::getUrl('edit', ['record' => $record])),
+                ActionGroup::make([
+                    Action::make('view')
+                        ->label('View')
+                        ->icon('heroicon-o-eye')
+                        ->url(fn (Item $record): string => ItemResource::getUrl('view', ['record' => $record])),
+
+                    EditAction::make()
+                        ->url(fn (Item $record): string => ItemResource::getUrl('edit', ['record' => $record])),
+
+                    ItemResource::quickChangeAction(),
+
+                    DeleteAction::make(),
+                ])
+                    ->icon('heroicon-m-ellipsis-horizontal')
+                    ->iconButton()
+                    ->tooltip('Actions'),
             ]);
     }
 

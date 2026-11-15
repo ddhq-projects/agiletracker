@@ -44,10 +44,15 @@ npm install
 cp .env.example .env
 php artisan key:generate
 php artisan migrate --force
+php artisan filament:assets
 npm run build
 ```
 
 Or use the bundled script: `composer run setup`
+
+> Run `php artisan filament:assets` after every Composer update that changes Filament
+> or a Filament plugin. Without it the panel can load stale or missing JavaScript,
+> which breaks boards, tables and notifications in the browser.
 
 ## Dev server
 

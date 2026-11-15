@@ -21,6 +21,7 @@ class SentWidget extends BaseWidget
     {
         return $table
             ->query(fn (): Builder => Item::query()
+                ->visibleTo(auth()->user())
                 ->where('reporter_id', auth()->id())
                 ->orderBy('position')
                 ->limit(3)

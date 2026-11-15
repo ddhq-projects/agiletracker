@@ -1,5 +1,7 @@
 # RFC: Label-Based Tagging System — Replace Type, Status, Priority
 
+> **Partly superseded** by [Relaticle Kanban, Comments, and Item Custom Fields](./2026-11-14-relaticle-item-features.md): workflow state is a native `items.status` column again and labels are non-exclusive tags. Everything else here (labels as flat, user-defined tags) still stands.
+
 ## TL;DR
 
 Remove hardcoded `type`, `status`, and `priority` columns from `Item` and replace them with a flexible label-based tagging system. Any label can be assigned to any item — users define their own categories, workflows, and priorities as labels. No new columns needed: existing `Label` model (`name` + `color`) is sufficient.

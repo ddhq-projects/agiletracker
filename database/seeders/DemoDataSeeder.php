@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Enums\GroupMemberRole;
+use App\Enums\GroupType;
+use App\Enums\ItemStatus;
 use App\Models\Favorite;
+use App\Models\Group;
 use App\Models\Item;
 use App\Models\Label;
 use App\Models\User;
@@ -15,15 +19,13 @@ class DemoDataSeeder extends Seeder
     public function run(): void
     {
         // ─── Labels ──────────────────────────────────────────────────────
+        // Workflow state lives in `items.status`, so the seed set keeps only
+        // descriptive tags.
         $labels = [
             ['name' => 'Task', 'color' => '#3b82f6'],
             ['name' => 'Bug', 'color' => '#ef4444'],
             ['name' => 'Feature', 'color' => '#8b5cf6'],
             ['name' => 'Epic', 'color' => '#f59e0b'],
-            ['name' => 'To Do', 'color' => '#6b7280'],
-            ['name' => 'In Progress', 'color' => '#f59e0b'],
-            ['name' => 'Review', 'color' => '#3b82f6'],
-            ['name' => 'Done', 'color' => '#10b981'],
             ['name' => 'Low', 'color' => '#6b7280'],
             ['name' => 'Medium', 'color' => '#3b82f6'],
             ['name' => 'High', 'color' => '#f59e0b'],
@@ -35,9 +37,6 @@ class DemoDataSeeder extends Seeder
 
         $labelTask = Label::where('name', 'Task')->first();
         $labelEpic = Label::where('name', 'Epic')->first();
-        $labelInProgress = Label::where('name', 'In Progress')->first();
-        $labelTodo = Label::where('name', 'To Do')->first();
-        $labelDone = Label::where('name', 'Done')->first();
         $labelHigh = Label::where('name', 'High')->first();
         $labelMedium = Label::where('name', 'Medium')->first();
 
@@ -47,24 +46,69 @@ class DemoDataSeeder extends Seeder
         $carol = User::where('email', 'carol@example.com')->first();
         $otherUsers = [$alice, $bob, $carol];
 
+        // ─── Groups ──────────────────────────────────────────────────────
+        // One of each type shows the naming the access model expects: a
+        // project group names the project of an item, while teams and
+        // departments are organisational units.
+        $engineering = Group::firstOrCreate(
+            ['name' => 'Engineering'],
+            ['type' => GroupType::Department, 'description' => 'Everyone who ships code.'],
+        );
+
+        $platform = Group::firstOrCreate(
+            ['name' => 'Platform team'],
+            ['type' => GroupType::Team, 'parent_id' => $engineering->getKey()],
+        );
+
+        $coreProject = Group::firstOrCreate(
+            ['name' => 'AgileTracker Core'],
+            ['type' => GroupType::Project],
+        );
+
+        $mobileProject = Group::firstOrCreate(
+            ['name' => 'Mobile App'],
+            ['type' => GroupType::Project],
+        );
+
+        $engineering->users()->syncWithoutDetaching([
+            $admin->getKey() => ['role' => GroupMemberRole::Manager->value],
+        ]);
+        $platform->users()->syncWithoutDetaching([
+            $alice->getKey() => ['role' => GroupMemberRole::Manager->value],
+            $bob->getKey() => ['role' => GroupMemberRole::Member->value],
+            $carol->getKey() => ['role' => GroupMemberRole::Member->value],
+        ]);
+        $coreProject->users()->syncWithoutDetaching([
+            $alice->getKey() => ['role' => GroupMemberRole::Manager->value],
+            $bob->getKey() => ['role' => GroupMemberRole::Member->value],
+        ]);
+        $mobileProject->users()->syncWithoutDetaching([
+            $carol->getKey() => ['role' => GroupMemberRole::Member->value],
+        ]);
+
         // ─── Projects ────────────────────────────────────────────────────
         $project1 = Item::factory()->create([
             'title' => 'AgileTracker Core',
             'description' => 'Core functionality for the AgileTracker project management tool.',
+            'status' => ItemStatus::InProgress,
+            'project_group_id' => $coreProject->getKey(),
         ]);
-        $project1->labels()->sync([$labelEpic->id, $labelInProgress->id, $labelHigh->id]);
+        $project1->labels()->sync([$labelEpic->id, $labelHigh->id]);
 
         $project2 = Item::factory()->create([
             'title' => 'Mobile App',
             'description' => 'React Native mobile application for on-the-go task management.',
+            'status' => ItemStatus::Todo,
+            'project_group_id' => $mobileProject->getKey(),
         ]);
-        $project2->labels()->sync([$labelEpic->id, $labelTodo->id, $labelMedium->id]);
+        $project2->labels()->sync([$labelEpic->id, $labelMedium->id]);
 
         $project3 = Item::factory()->create([
             'title' => 'API v2',
             'description' => 'Public REST API for third-party integrations.',
+            'status' => ItemStatus::Done,
         ]);
-        $project3->labels()->sync([$labelEpic->id, $labelDone->id, $labelHigh->id]);
+        $project3->labels()->sync([$labelEpic->id, $labelHigh->id]);
 
         $projects = [$project1->id, $project2->id, $project3->id];
 
@@ -75,8 +119,9 @@ class DemoDataSeeder extends Seeder
                 'parent_id' => $projects[array_rand($projects)],
                 'assignee_id' => $admin->id,
                 'reporter_id' => $otherUsers[array_rand($otherUsers)]->id,
+                'status' => ItemStatus::Todo,
             ]);
-            $task->labels()->sync([$labelTask->id, $labelTodo->id]);
+            $task->labels()->sync([$labelTask->id]);
             $task->to()->sync([$admin->id]);
         }
 
@@ -87,8 +132,9 @@ class DemoDataSeeder extends Seeder
                 'parent_id' => $projects[array_rand($projects)],
                 'assignee_id' => $otherUsers[array_rand($otherUsers)]->id,
                 'reporter_id' => $admin->id,
+                'status' => ItemStatus::InProgress,
             ]);
-            $task->labels()->sync([$labelTask->id, $labelInProgress->id]);
+            $task->labels()->sync([$labelTask->id]);
         }
 
         // ── Favorites: 3 entries for admin@example.com ───────────────────
@@ -100,7 +146,6 @@ class DemoDataSeeder extends Seeder
                 'favoritable_id' => $item->id,
             ], [
                 'name' => $item->title,
-                'url' => '/i/'.$item->id,
             ]);
         }
     }

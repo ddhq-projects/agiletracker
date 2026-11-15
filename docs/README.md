@@ -25,3 +25,4 @@ Knowledge base — reference guides, onboarding docs, troubleshooting, conventio
 | [Product Overview](wiki/product-overview.md) | What AgileTracker is, use cases, audience |
 | [Architecture](wiki/architecture.md) | Tech stack, core models, directory structure, patterns |
 | [Development Guide](wiki/development.md) | Setup, code style, testing, conventions |
+| [Bunny.net S3 Storage](wiki/bunny-s3-storage.md) | Create an S3-compatible Storage Zone, point the uploaders at it, and verify item and comment attachments |

@@ -32,6 +32,7 @@ class InboxWidget extends BaseWidget
     {
         return $table
             ->query(fn (): Builder => Item::query()
+                ->visibleTo(auth()->user())
                 ->whereHas('to', fn (Builder $q) => $q->where('user_id', auth()->id()))
                 ->orderBy('position')
                 ->limit(3)

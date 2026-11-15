@@ -4,6 +4,38 @@ Use date format for releases: `YYYY.MM.I` (e.g. `2026.05.1-alpha`).
 Use flat lists for changes
 If changes many - use categories (Added, Changed, Fixed, etc.)
 
+## [Unreleased]
+
+### Added
+- Global roles and permissions: `RoleName` / `PermissionName` catalogues, idempotent `RolesAndPermissionsSeeder` (mandatory on upgrade), `Gate::before` for `admin`, and one base role per user assigned only through `AssignUserRole`
+- Typed groups (`project`, `team`, `department`, `other`) with a `member`/`manager` pivot and an optional hierarchy; admin-only `/settings/groups`
+- Row-level item access (Planfix-like): `items.visibility` (`public`/`restricted`), `items.project_group_id` and `item_group`; `App\Access\ItemAccess` is the single rule behind both the SQL perimeter and the policies
+- Access section on the item form (project, visibility, groups), restricted to whoever manages the item's access, with status/assignee-only editing for the assignee
+- `relaticle/activity-log` item timeline (history slide-over on the item page) and a read-only `/settings/activity-log` journal with date/event/log/causer/subject filters
+- Activity allowlists for Item, User, Group, Label, Board, BoardColumn and Comment, plus `roles_updated`, `group_members_updated`, `access_updated` and `settings_updated` events, with secrets masked on read
+- Tests: role × permission matrix, group management, item access matrix, API perimeter, activity journal
+- Boards: `Board`, `BoardColumn` and `BoardItem` — any item or project can be on any number of boards, with its own column and card order on each
+- Boards resource (`/boards`) to create, reorder, rename and delete boards and to edit their columns (name, colour, WIP limit, order)
+- Board page (`/boards/{board}`) with Flowforge drag & drop, label/assignee filters, “Add items”, and open/remove card actions
+- “Add to board” from the item table (row and bulk) and the item view page; item view lists the boards an item belongs to
+- Default “Main board” backfilled from the four workflow states so existing items stay visible
+- File attachments: item description editor and comment composer upload to the disk set by `ATTACHMENTS_DISK` (`public` locally, `bunny` in production)
+- `config/attachments.php` — one disk, directory, size limit and MIME list for both uploaders
+- `bunny` filesystem disk and `league/flysystem-aws-s3-v3`, plus a Bunny Storage Zone with S3 compatibility and a CDN Pull Zone for public file URLs
+
+### Changed
+- `ItemPolicy`, `LabelPolicy`, `BoardPolicy`, `CommentPolicy` and `UserPolicy` ask for permissions instead of allowing every authenticated user; `/settings` and its user-menu item use `settings.manage`
+- The settings user form assigns exactly one role and refuses to demote the last administrator
+- Items, boards, comments, inbox/sent, widgets, favorites and REST API v1 all read the same item perimeter; hidden records answer 404, forbidden actions 403
+- New items are created as `restricted`; historical items stay `public`, so the upgrade hides nothing
+- Comment editing now leaves an activity entry on the Comment subject
+- The single status Kanban page is replaced by Boards; `/kanban-board` redirects to `/boards`
+- Moving a board card writes only that board's membership (`board_items`); the item's native `status` and other boards are untouched
+- Comment attachments are enabled; they were migrated but switched off in the previous release
+
+### Fixed
+- `php artisan migrate:fresh --seed` resolves the permission catalogue during seeding (the cached permission list is reset before the roles are synced)
+
 ## [2026.11.1-alpha] — 2026-11-13
 
 Dependency refresh: every Composer and npm package is on its latest release.

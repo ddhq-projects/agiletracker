@@ -3,7 +3,7 @@
 ## Project overview
 - **AgileTracker** — minimal project & task manager, Jira/Redmine alternative
 - Stack: Laravel 13, FilamentPHP 5, Livewire 4, Tailwind CSS 4, Vite 8, PHP 8.4+
-- Key packages: `spatie/laravel-permission`, `spatie/laravel-activitylog`
+- Key packages: `spatie/laravel-permission`, `spatie/laravel-activitylog`, `relaticle/flowforge`
 - Database: SQLite (dev/test), MySQL/PostgreSQL (prod)
 - License: MIT
 
@@ -79,12 +79,19 @@ npm run build
 ## Project structure
 ```
 app/
+  Access/
+    ItemAccess.php  — the single row-level access rule (SQL scope + decisions)
+  Actions/          — domain actions (roles, group and item composition, boards)
+  Enums/            — ItemStatus, RoleName, PermissionName, GroupType, GroupMemberRole, ItemVisibility
   Filament/
     Pages/          — custom Filament pages
     Resources/      — Filament resources (CRUD)
     Widgets/        — dashboard widgets
+    Settings/       — pages and resources of the admin-only settings panel
   Models/
+    Activity.php    — the audit journal model (redacts secrets on read)
     Comment.php     — comments on items
+    Group.php       — typed groups with member/manager pivot
     Item.php        — tasks/issues (core entity)
     Label.php       — labels/tags
     User.php        — users with Spatie roles
@@ -92,10 +99,18 @@ app/
 ```
 
 ## Architecture notes
-- `Item` is the core model — supports `type` (task/bug/feature), `status`, `priority`, `parent_id` (subtasks), assignee, reporter, due date, time tracking
+- `Item` is the core model — supports `status` (native workflow state: `todo`, `in_progress`, `review`, `done`), `parent_id` (subtasks), assignee, reporter, due dates, `is_epic`; labels are non-exclusive tags and `meta` holds extra JSON metadata
+- `App\Enums\ItemStatus` is the single source of the item's own workflow state; the Item table/infolist/API read it. Boards are separate: `Board`, `BoardColumn` and `BoardItem` (`app/Filament/Pages/BoardView.php`, `relaticle/flowforge`) give each board its own editable columns, and an item can sit in a different column on every board
+- `items.position` is a `DECIMAL(20,10)` position, unique per `(status, position)`; it belongs to the item's own workflow state, not to any board
+- `board_items` (`board_id`, `item_id`, `board_column_id`, `position`) is the board membership; a card move writes this row only and never changes `items.status`, labels or activity
 - Soft deletes and activity logging on `Item` via Spatie
-- Permission system via `spatie/laravel-permission` — roles defined through seeders
-- Every model change is logged via `spatie/laravel-activitylog`
+- Two Filament panels: `main` (default, at `/`, every authenticated user) and `settings` (at `/settings`, admins only, `app/Filament/Settings/`). Each panel discovers only its own directory, and `User::canAccessPanel()` restricts the settings panel to the `admin` role
+- Permission system via `spatie/laravel-permission`: `App\Enums\RoleName` / `App\Enums\PermissionName` hold the catalogue, `RolesAndPermissionsSeeder` creates it (idempotent, mandatory on upgrade) and `Gate::before` lets `admin` pass every gate except the API abilities. A user holds exactly one base role, assigned only through `App\Actions\AssignUserRole` (which refuses to remove the last admin). See `docs/specs/access-control.md`
+- `Group` (`app/Models/Group.php`) is a typed group of users (`project`, `team`, `department`, `other`) with a `member`/`manager` pivot; only admins manage it (`/settings/groups`)
+- `App\Access\ItemAccess` is the single row-level rule: a public item is visible to all, a restricted one only to its reporter, assignee, `to`/`cc`, attached groups and group leaders. It exposes `scopeVisibleTo()` (SQL) and `view`/`update`/`delete`/`manageAccess`/`updatableAttributes`, and `Item::scopeVisibleTo()` delegates to it. Never write a `whereHas` that duplicates it — global role permissions and item access are always intersected
+- `items.visibility` (`public`/`restricted`, new items restricted) and `items.project_group_id` (a `project` group); `item_group` attaches access groups. Historical rows stay public, so a deploy hides nothing
+- Every model change is logged via `spatie/laravel-activitylog` with a per-model allowlist (`logOnlyDirty()`): Item, User, Group (plus `group_members_updated`), Label, Board, BoardColumn, Comment, and `roles_updated` / `access_updated` / `settings_updated` events. `App\Models\Activity` masks secrets on read; the item timeline comes from `relaticle/activity-log`, the read-only journal lives at `/settings/activity-log`
+- Files (item description attachments, comment attachments) are stored on `config('attachments.disk')` — `public` locally, the `bunny` S3 disk in production; both uploaders need a disk that serves public URLs
 
 ## Before committing
 1. `./vendor/bin/pint` — must pass
