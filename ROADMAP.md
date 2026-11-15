@@ -9,16 +9,16 @@
   - [ ] here [http://agiletracker.localhost/inbox](http://agiletracker.localhost/inbox) 
   - [ ] here [http://agiletracker.localhost/sent](http://agiletracker.localhost/sent) 
 - [ ] add groups
-  - [ ] with types: project, team, department etc
-  - [ ] groups access to issues - restrict
-  - [ ] research how to do in Jira and Planfix - make both options
+  - [x] with types: project, team, department etc
+  - [x] groups access to issues - restrict
+  - [x] research how to do in Jira and Planfix - make both options (Planfix-like shipped, Jira-like recorded in the archived RFC)
 - [x] move the settings to a separate panel [http://agiletracker.localhost/settings](http://agiletracker.localhost/settings)
 
 - [ ] Alfa 3
   - [x] sidebar - collapsed
-  - [ ] Roles & permissions (admin, manager, user) via Spatie & Passport
-  - [ ] add [https://github.com/relaticle/activity-log](https://github.com/relaticle/activity-log)
-    - [ ] и добавить раздел в настройки [http://agiletracker.localhost/settings](http://agiletracker.localhost/settings)  - для админов
+  - [x] Roles & permissions (admin, manager, user) via Spatie (Sanctum stays the API auth; Passport was declined as an OAuth2 server is not RBAC)
+  - [x] add [https://github.com/relaticle/activity-log](https://github.com/relaticle/activity-log)
+    - [x] и добавить раздел в настройки [http://agiletracker.localhost/settings](http://agiletracker.localhost/settings) - для админов
 
 - [ ] beta 1
   - add master setup - like wordpress - if no data - setup first admin user for first auto login

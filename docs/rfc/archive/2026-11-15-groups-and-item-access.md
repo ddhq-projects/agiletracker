@@ -1,8 +1,9 @@
 ---
 title: "Роли, группы, доступ к задачам и журнал активности"
 type: rfc
-status: draft
+status: done
 created: 2026-11-15
+completed: 2026-11-15
 ---
 
 # Роли, группы, доступ к задачам и журнал активности
@@ -13,7 +14,7 @@ created: 2026-11-15
 
 ## Контекст
 
-**Situation.** В `ItemPolicy` методы `view`, `create`, `update` и `delete` разрешены всем аутентифицированным пользователям. Спецификация [REST API v1](../specs/rest-api.md) подтверждает, что Item не имеет perimeter-фильтра, а [Boards](../specs/boards.md) прямо фиксирует плоский доступ. При этом у Item уже есть постановщик (`reporter_id`), исполнитель (`assignee_id`), адресаты (`item_to`) и наблюдатели (`item_cc`), а роли Spatie `admin`, `manager`, `user` пока не образуют предметную модель прав на задачи. Панель `/settings` уже admin-only, API использует Sanctum token abilities, но разрешения Spatie не созданы. `spatie/laravel-activitylog` установлен, однако `LogsActivity` подключён только к Item, что противоречит утверждению `AGENTS.md` о логировании каждой модели.
+**Situation.** В `ItemPolicy` методы `view`, `create`, `update` и `delete` разрешены всем аутентифицированным пользователям. Спецификация [REST API v1](../../specs/rest-api.md) подтверждает, что Item не имеет perimeter-фильтра, а [Boards](../../specs/boards.md) прямо фиксирует плоский доступ. При этом у Item уже есть постановщик (`reporter_id`), исполнитель (`assignee_id`), адресаты (`item_to`) и наблюдатели (`item_cc`), а роли Spatie `admin`, `manager`, `user` пока не образуют предметную модель прав на задачи. Панель `/settings` уже admin-only, API использует Sanctum token abilities, но разрешения Spatie не созданы. `spatie/laravel-activitylog` установлен, однако `LogsActivity` подключён только к Item, что противоречит утверждению `AGENTS.md` о логировании каждой модели.
 
 **Complication.** Без глобальной матрицы роли `manager` и `user` почти неразличимы, а без групп и row-level visibility нельзя разделить проекты, команды и подразделения: скрытие записи только в Filament-таблице оставит её в API, на досках, в комментариях, виджетах и по прямой ссылке. Для Jira характерны permission schemes и независимые issue security schemes; для Planfix — доступ к каждой задаче по её участникам, группам, аудиторам и руководителям. В Redmine доступ задаётся не у задачи, а у проекта. Одновременно администратору нужен безопасный способ расследовать изменения без записи паролей, токенов и технических перемещений в журнал.
 
@@ -184,59 +185,59 @@ Labels, пользователи и доски остаются общими с�
 
 ### 1. Глобальные роли, разрешения и их назначение
 
-- [ ] Два последовательных запуска `RolesAndPermissionsSeeder` создают ровно три базовые роли и один каталог permissions без дублей, назначают корректные права и сбрасывают кеш.
-- [ ] Пользователь без роли получает `user`; при нескольких базовых ролях остаётся наиболее привилегированная; вновь созданный UI/REST пользователь без явной роли получает `user`.
-- [ ] Pest data-set подтверждает каждую строку глобальной матрицы; `admin` проходит Gate, `manager` и `user` получают только права своей роли без direct permissions.
-- [ ] Администратор назначает одну роль через `/settings/users`; снятие последней роли `admin` отклоняется без записи, а при втором администраторе разрешено.
-- [ ] Изменение роли создаёт одно событие `roles_updated` с old/new и causer; не-администратор и API не могут назначить роль.
-- [ ] Passport отсутствует; существующие Sanctum tokens и имена API abilities продолжают работать.
+- [x] Два последовательных запуска `RolesAndPermissionsSeeder` создают ровно три базовые роли и один каталог permissions без дублей, назначают корректные права и сбрасывают кеш.
+- [x] Пользователь без роли получает `user`; при нескольких базовых ролях остаётся наиболее привилегированная; вновь созданный UI/REST пользователь без явной роли получает `user`.
+- [x] Pest data-set подтверждает каждую строку глобальной матрицы; `admin` проходит Gate, `manager` и `user` получают только права своей роли без direct permissions.
+- [x] Администратор назначает одну роль через `/settings/users`; снятие последней роли `admin` отклоняется без записи, а при втором администраторе разрешено.
+- [x] Изменение роли создаёт одно событие `roles_updated` с old/new и causer; не-администратор и API не могут назначить роль.
+- [x] Passport отсутствует; существующие Sanctum tokens и имена API abilities продолжают работать.
 
 ### 2. Типизированные группы, членство и проектная привязка
 
-- [ ] Администратор создаёт и редактирует группы всех четырёх типов, назначает members/managers и родительскую группу; не-администратор получает 403 на управление.
-- [ ] Состав many-to-many уникален, циклы иерархии отклоняются, `project_group_id` принимает только `project`, а занятую проектную группу нельзя удалить.
-- [ ] Удаление членства не меняет Item и не требует backfill доступа.
+- [x] Администратор создаёт и редактирует группы всех четырёх типов, назначает members/managers и родительскую группу; не-администратор получает 403 на управление.
+- [x] Состав many-to-many уникален, циклы иерархии отклоняются, `project_group_id` принимает только `project`, а занятую проектную группу нельзя удалить.
+- [x] Удаление членства не меняет Item и не требует backfill доступа.
 
 ### 3. Два альтернативных правила доступа к Item
 
-- [ ] **Общее:** историческая публичная задача сохраняет видимость, а её операции следуют глобальной матрице; ограниченная задача без разрешающего правила недоступна, а `admin` и положенный `reporter` не теряют доступ на чтение.
-- [ ] **A:** схема переиспользуется проектами, default уровень уникален, все заявленные subject types работают по OR, смена проекта применяет правило новой схемы.
-- [ ] **A:** не-член уровня не видит ограниченный Item даже при доступности проекта; управлять схемами может только admin, менять уровень — admin или reporter.
-- [ ] **B:** член назначенной группы получает доступ динамически; добавление и удаление пользователя меняют доступ без изменения `item_group`.
-- [ ] **B:** каждая строка матрицы прав подтверждена тестом, включая project manager и руководителей подчинённых групп; новые задачи по умолчанию restricted.
+- [x] **Общее:** историческая публичная задача сохраняет видимость, а её операции следуют глобальной матрице; ограниченная задача без разрешающего правила недоступна, а `admin` и положенный `reporter` не теряют доступ на чтение.
+- [ ] **A:** схема переиспользуется проектами, default уровень уникален, все заявленные subject types работают по OR, смена проекта применяет правило новой схемы. *(не выполнено: реализована ветка B; критерии сохранены как граница отклонённого варианта)*
+- [ ] **A:** не-член уровня не видит ограниченный Item даже при доступности проекта; управлять схемами может только admin, менять уровень — admin или reporter. *(не выполнено: реализована ветка B)*
+- [x] **B:** член назначенной группы получает доступ динамически; добавление и удаление пользователя меняют доступ без изменения `item_group`.
+- [x] **B:** каждая строка матрицы прав подтверждена тестом, включая project manager и руководителей подчинённых групп; новые задачи по умолчанию restricted.
 
 ### 4. Единый authorization perimeter, Filament и REST API v1
 
-- [ ] `ItemPolicy` и все query scopes используют один сервис; прямой доступ к невидимому Item даёт 404, запрещённое действие над видимым — 403.
-- [ ] Матрица «роль × основание доступа × операция» подтверждает пересечение правил: роль не обходит restricted perimeter, а access grant не выдаёт действие сверх глобального permission.
-- [ ] Реальные Filament/Livewire вызовы подтверждают 403 для запрещённых Item/Label/Board/Comment/User операций, включая bulk actions и card move, а не только скрытие кнопок.
-- [ ] Невидимый Item нельзя обновить, удалить, назначить, прокомментировать или добавить на доску через отдельный endpoint/action.
-- [ ] Родитель и дети проверяются независимо; скрытый родитель не раскрывается, скрытые дети отсутствуют в includes/aggregates, назначение скрытого parent отклоняется.
-- [ ] Комментарии и доски не показывают скрытые Item и их счётчики; выборки не используют PHP post-filtering и не содержат N+1.
+- [x] `ItemPolicy` и все query scopes используют один сервис; прямой доступ к невидимому Item даёт 404, запрещённое действие над видимым — 403.
+- [x] Матрица «роль × основание доступа × операция» подтверждает пересечение правил: роль не обходит restricted perimeter, а access grant не выдаёт действие сверх глобального permission.
+- [x] Реальные Filament/Livewire вызовы подтверждают 403 для запрещённых Item/Label/Board/Comment/User операций, включая bulk actions и card move, а не только скрытие кнопок.
+- [x] Невидимый Item нельзя обновить, удалить, назначить, прокомментировать или добавить на доску через отдельный endpoint/action.
+- [x] Родитель и дети проверяются независимо; скрытый родитель не раскрывается, скрытые дети отсутствуют в includes/aggregates, назначение скрытого parent отклоняется.
+- [x] Комментарии и доски не показывают скрытые Item и их счётчики; выборки не используют PHP post-filtering и не содержат N+1.
 
-- [ ] Access UI показывает только поля выбранной ветки и не позволяет пользователю без `manageAccess` изменить их или расширить свои права.
-- [ ] Два пользователя с разными правами получают согласованные результаты в Item list/view/search, Inbox/Sent, widgets, Favorites, boards и comments.
-- [ ] REST search/mutate/destroy/assign, parent/children/comments includes применяют тот же perimeter; token abilities продолжают проверяться отдельно.
-- [ ] OpenAPI содержит только additive-поля выбранной ветки; generic group/scheme/role API отсутствует, существующие публичные поля и маршруты не сломаны.
+- [x] Access UI показывает только поля выбранной ветки и не позволяет пользователю без `manageAccess` изменить их или расширить свои права.
+- [x] Два пользователя с разными правами получают согласованные результаты в Item list/view/search, Inbox/Sent, widgets, Favorites, boards и comments.
+- [x] REST search/mutate/destroy/assign, parent/children/comments includes применяют тот же perimeter; token abilities продолжают проверяться отдельно.
+- [x] OpenAPI содержит только additive-поля выбранной ветки; generic group/scheme/role API отсутствует, существующие публичные поля и маршруты не сломаны.
 
 ### 5. Запись изменений и timeline Item
 
-- [ ] `relaticle/activity-log` установлен без конфликтов, составной индекс существует, production Vite build содержит стили пакета.
-- [ ] Пользователь с правом просмотра Item открывает timeline и видит создание/изменение с causer, датой и old/new diff; пользователь без row-level доступа не получает историю; position-only и board-membership-only действия новых записей не создают.
-- [ ] Тесты подтверждают allowlist-логирование Item, User, Group и членства, access-полей, Label, Board, BoardColumn, Comment и General settings, включая отсутствие пустых изменений.
-- [ ] Ни сохранённые properties, ни HTML timeline не содержат значения password, remember_token, API token или секрета; тест renderer маскирует даже искусственно созданную запись с такими ключами.
+- [x] `relaticle/activity-log` установлен без конфликтов, составной индекс существует, production Vite build содержит стили пакета.
+- [x] Пользователь с правом просмотра Item открывает timeline и видит создание/изменение с causer, датой и old/new diff; пользователь без row-level доступа не получает историю; position-only и board-membership-only действия новых записей не создают.
+- [x] Тесты подтверждают allowlist-логирование Item, User, Group и членства, access-полей, Label, Board, BoardColumn, Comment и General settings, включая отсутствие пустых изменений.
+- [x] Ни сохранённые properties, ни HTML timeline не содержат значения password, remember_token, API token или секрета; тест renderer маскирует даже искусственно созданную запись с такими ключами.
 
 ### 6. Общий журнал в панели настроек
 
-- [ ] Администратор получает 200 на `/settings/activity-log`, видит существующие записи и фильтрует их по дате, event, causer, subject type и log name; View показывает корректный diff и fallback для удалённого subject.
-- [ ] `manager` и `user` не видят пункт Activity log и получают 403 по прямым URL List/View; Create/Edit/Delete маршруты и actions отсутствуют.
-- [ ] Запросы списка используют пагинацию и eager loading без N+1 по causer/subject; существующие activity records не удалены и не переписаны.
+- [x] Администратор получает 200 на `/settings/activity-log`, видит существующие записи и фильтрует их по дате, event, causer, subject type и log name; View показывает корректный diff и fallback для удалённого subject.
+- [x] `manager` и `user` не видят пункт Activity log и получают 403 по прямым URL List/View; Create/Edit/Delete маршруты и actions отсутствуют.
+- [x] Запросы списка используют пагинацию и eager loading без N+1 по causer/subject; существующие activity records не удалены и не переписаны.
 
 ### 7. Миграция, выпуск и проверка безопасности
 
-- [ ] Миграция на копии существующих данных оставляет все исторические Item публичными, повторный запуск не дублирует grants/связи, новые индексы присутствуют; обязательный role seeder не оставляет installation без администратора.
-- [ ] Спецификации, `AGENTS.md` и Roadmap соответствуют выбранной реализации; не выбранная ветка не оставляет второго runtime-механизма авторизации.
-- [ ] Проходят матричные и сквозные Pest-тесты, полный `php artisan test --compact`, `php artisan rest:check`, `vendor/bin/pint --dirty --format agent` и `npm run build`.
+- [x] Миграция на копии существующих данных оставляет все исторические Item публичными, повторный запуск не дублирует grants/связи, новые индексы присутствуют; обязательный role seeder не оставляет installation без администратора.
+- [x] Спецификации, `AGENTS.md` и Roadmap соответствуют выбранной реализации; не выбранная ветка не оставляет второго runtime-механизма авторизации.
+- [x] Проходят матричные и сквозные Pest-тесты, полный `php artisan test --compact`, `php artisan rest:check`, `vendor/bin/pint --dirty --format agent` и `npm run build`.
 
 ## Дорожная карта
 
@@ -256,13 +257,46 @@ Labels, пользователи и доски остаются общими с�
 
 ## Тест инструкции
 
-<!-- Заполняется dd-delivery после реализации выбранной ветки. -->
+Реализована **ветка B (Planfix-like)**. Полное описание итогового состояния — в
+[access-control.md](../../specs/access-control.md).
+
+### 1. Автотесты
+
+- [tests/Feature/Access/RolePermissionMatrixTest.php](../../../tests/Feature/Access/RolePermissionMatrixTest.php) — идемпотентность сидера, нормализация ролей, матрица «роль × permission», защита последнего администратора, `roles_updated`, доступ к `/settings`, одиночная роль в форме пользователя
+- [tests/Feature/Access/GroupManagementTest.php](../../../tests/Feature/Access/GroupManagementTest.php) — типы, состав, `group_members_updated`, иерархия без циклов, запрет удаления проектной группы с задачами, удаление пользователя без потери задач
+- [tests/Feature/Access/ItemAccessTest.php](../../../tests/Feature/Access/ItemAccessTest.php) — матрица «роль × основание × операция», динамическое членство, руководитель участника и подчинённых групп, связка ролей и row-level прав, подзадачи, 404/403, доски, комментарии, Access UI, restricted по умолчанию
+- [tests/Feature/Api/ItemPerimeterApiTest.php](../../../tests/Feature/Api/ItemPerimeterApiTest.php) — perimeter в search/mutate/destroy, ограниченный набор полей у исполнителя, `project_group_id` только проект, скрытый parent, независимость token abilities
+- [tests/Feature/Access/ActivityJournalTest.php](../../../tests/Feature/Access/ActivityJournalTest.php) — timeline Item, доступ к `/settings/activity-log`, фильтры, отсутствие write-маршрутов, allowlist логирования, `settings_updated`, маскировка секретов
+- Полный прогон: `php artisan test --compact` (355 тестов), `php artisan rest:check`, `php artisan scramble:export --path=tests/api.json`, `vendor/bin/pint`, `npm run build`
+
+### 2. Данные и миграции
+
+- `php artisan migrate` на копии существующей базы: новые таблицы `groups`, `group_user`, `item_group`, колонки `items.visibility` / `items.project_group_id`, индекс `activity_log(subject_type, subject_id, created_at)`; все исторические Item остаются `public`
+- `php artisan db:seed --class=RolesAndPermissionsSeeder` (обязательный шаг обновления): три роли, каталог permissions, нормализация пользователей, ни одна установка не остаётся без администратора
+- `php artisan migrate:fresh --seed` создаёт демо-группы (`Engineering`, `Platform team`, проектные группы) и проекты, привязанные к ним
+
+### 3. Ручная проверка UI
+
+- [/settings/users](http://agiletracker.localhost/settings/users) — одна роль у пользователя, попытка снять роль с последнего администратора даёт ошибку валидации
+- [/settings/groups](http://agiletracker.localhost/settings/groups) — создание группы любого типа, состав и руководители, запрет выбрать потомка как родителя
+- [/i](http://agiletracker.localhost/i) — в списке нет недоступных задач; прямой URL недоступной задачи отдаёт 404 (`/i/{id}`), доступной без права изменения — 403 на `/i/{id}/edit`
+- Карточка задачи: секция **Access** видна только постановщику/администратору; исполнитель может изменить только статус и исполнителя; кнопка истории открывает timeline с causer и diff
+- [/boards/1](http://agiletracker.localhost/boards/1) — скрытая задача не появляется карточкой и не попадает в счётчики; «Add items» не предлагает недоступные задачи
+- [/settings/activity-log](http://agiletracker.localhost/settings/activity-log) — журнал доступен только администратору, фильтры по дате/событию/log/causer/subject, View показывает diff и не показывает секреты; `/settings/activity-log/create` отдаёт 404
+
+### 4. API
+
+- `POST /api/v1/items/search` — недоступная задача отсутствует в `total` и `data`
+- `POST /api/v1/items/mutate` с ключом недоступной задачи — 422 (`mutate.0.key`); с `visibility` без `manageAccess` — 403; исполнителю с чужим полем — 422
+- `POST /api/v1/comments/search` — комментарии недоступной задачи отсутствуют
+- Токен без `items:read` у администратора — 403: role и token abilities независимы
+
 
 ### Открытые вопросы
 
-- **Выбор ветки перед delivery:** утвердить рекомендованную Planfix-like модель или требование Jira-like schemes. Одновременная поддержка обоих режимов и переключатель в runtime не планируются.
+- **Выбор ветки перед delivery:** решено в пользу рекомендованной Planfix-like модели; Jira-like schemes не реализуются и остаются границей отклонённого варианта. Одновременная поддержка обоих режимов и переключатель в runtime не планируются.
 - **Конфиденциальность файлов:** текущие item description и comment attachments используют публичные disk URL. Row-level ACL не защищает файл по известной ссылке; signed URLs/private disk требуют отдельного RFC и не должны считаться закрытыми этой задачей.
-- **Противоречие текущей спеки:** [item-comments.md](../specs/item-comments.md) в «Key decisions» называет attachments выключенными, а в «Known limitations» — включёнными. Перед delivery уточнить спецификацию; фактическая защита вложений в любом случае остаётся отдельным вопросом.
+- **Противоречие текущей спеки:** [item-comments.md](../../specs/item-comments.md) в «Key decisions» называет attachments выключенными, а в «Known limitations» — включёнными. Перед delivery уточнить спецификацию; фактическая защита вложений в любом случае остаётся отдельным вопросом.
 - **Скрытые проекты как отдельный раздел:** сейчас проект — типизированная группа без собственного рабочего UI. Отдельные project pages, списки открытых/скрытых проектов и default participants проекта не входят в этот RFC.
 - **Хранение журнала:** нужно ли запускать `activitylog:clean` по расписанию и какой срок хранения требуется в production? Текущий параметр 365 дней сохраняется, но scheduler и экспорт перед очисткой требуют отдельного эксплуатационного решения.
 
@@ -321,17 +355,17 @@ Redmine не участвует в выборе ветки, но полезен 
 - [Relaticle Activity Log — Filament UI](https://relaticle.github.io/activity-log/essentials/filament-ui)
 - [Relaticle Activity Log — admin audit и redaction](https://relaticle.github.io/activity-log/recipes/audit-log-for-admins)
 - [RFC отдельной панели настроек](2026-11-15-settings-panel-item-custom-fields.md)
-- [Текущая спецификация REST API v1](../specs/rest-api.md)
-- [Текущая спецификация Boards](../specs/boards.md)
-- [Текущая спецификация Settings panel](../specs/settings-panel.md)
+- [Текущая спецификация REST API v1](../../specs/rest-api.md)
+- [Текущая спецификация Boards](../../specs/boards.md)
+- [Текущая спецификация Settings panel](../../specs/settings-panel.md)
 
 ## Заметки
 
-- [ ] add groups
-  - [ ] with types: project, team, department etc
-  - [ ] groups access to issues - restrict
-  - [ ] research how to do in Jira and Planfix - make both options
+- [x] add groups
+  - [x] with types: project, team, department etc
+  - [x] groups access to issues - restrict
+  - [x] research how to do in Jira and Planfix - make both options
 
-  - [ ] Roles & permissions (admin, manager, user) via Spatie & Passport
-  - [ ] add [https://github.com/relaticle/activity-log](https://github.com/relaticle/activity-log)
-    - [ ] и добавить раздел в настройки [http://agiletracker.localhost/settings](http://agiletracker.localhost/settings)  - для админов
+  - [x] Roles & permissions (admin, manager, user) via Spatie & Passport
+  - [x] add [https://github.com/relaticle/activity-log](https://github.com/relaticle/activity-log)
+    - [x] и добавить раздел в настройки [http://agiletracker.localhost/settings](http://agiletracker.localhost/settings)  - для админов

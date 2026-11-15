@@ -335,7 +335,7 @@ class ItemResource extends Resource
             return false;
         }
 
-        $key = $user->getKey().':'.$record->getKey();
+        $key = $user->getKey().':'.$record->getKey().':'.($record->updated_at?->getTimestamp() ?? 0);
 
         if (! array_key_exists($key, self::$updatableAttributesCache)) {
             self::$updatableAttributesCache[$key] = app(ItemAccess::class)->updatableAttributes($user, $record);

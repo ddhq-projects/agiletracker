@@ -98,9 +98,10 @@ bearer scheme are added by OpenAPI transformers.
 - **`password` is marked with the `Write-only.` description rather than the OpenAPI `writeOnly`
   flag.** Scramble 0.13 does not support `writeOnly` on schemas; the field is still absent from the
   User write schema and appears only in `UserCreate`/`UserUpdate`.
-- **`CommentPolicy::create` allows any authenticated user.** The existence and non-deleted state of
-  `item_id` is checked by the field rule, so the client receives 422 (as in the RFC) rather than a
-  403 from the policy. The `view/update/delete` policy restricts the author and `admin`.
+- **`CommentPolicy::create` asks for `comments.create` and the visibility of the item.** The
+  existence and non-deleted state of `item_id` is checked by the field rule, so the client receives
+  422 (as in the RFC) for an unknown item, and 403 when the item exists but is out of reach. The
+  `view/update/delete` policy restricts the author, the moderator and the item perimeter.
 - **Access to `/docs/api` is limited to `local`/`testing`.** The public access policy for the UI
   remains an open question in the RFC; in production the page stays closed until a separate
   decision.
