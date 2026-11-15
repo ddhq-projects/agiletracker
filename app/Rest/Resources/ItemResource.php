@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Rest\Resources;
 
+use App\Enums\ItemStatus;
 use App\Models\Item;
 use App\Rest\Actions\AssignItems;
 use Illuminate\Contracts\Database\Eloquent\Builder;
@@ -56,6 +57,11 @@ class ItemResource extends Resource
                 ->nullable()
                 ->searchable()
                 ->examples('Project to revamp the billing system'),
+            Text::make('status')
+                ->filterable(['=', '!='])
+                ->rules(Rule::in(ItemStatus::values()))
+                ->updateRules('filled')
+                ->examples('in_progress'),
             Text::make('type')
                 ->virtual()
                 ->nullable()

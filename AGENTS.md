@@ -3,7 +3,7 @@
 ## Project overview
 - **AgileTracker** — minimal project & task manager, Jira/Redmine alternative
 - Stack: Laravel 13, FilamentPHP 5, Livewire 4, Tailwind CSS 4, Vite 8, PHP 8.4+
-- Key packages: `spatie/laravel-permission`, `spatie/laravel-activitylog`
+- Key packages: `spatie/laravel-permission`, `spatie/laravel-activitylog`, `relaticle/flowforge`
 - Database: SQLite (dev/test), MySQL/PostgreSQL (prod)
 - License: MIT
 
@@ -92,7 +92,9 @@ app/
 ```
 
 ## Architecture notes
-- `Item` is the core model — supports `type` (task/bug/feature), `status`, `priority`, `parent_id` (subtasks), assignee, reporter, due date, time tracking
+- `Item` is the core model — supports `status` (native workflow state: `todo`, `in_progress`, `review`, `done`), `parent_id` (subtasks), assignee, reporter, due dates, `is_epic`; labels are non-exclusive tags and `meta` holds extra JSON metadata
+- `App\Enums\ItemStatus` is the single source of workflow states; the Kanban board (`app/Filament/Pages/KanbanBoard.php`, `relaticle/flowforge`) and the Item table/infolist/API all read it
+- `items.position` is a `DECIMAL(20,10)` board position, unique per `(status, position)`; only the board writes it, and `Item` assigns the next position in the column on create
 - Soft deletes and activity logging on `Item` via Spatie
 - Permission system via `spatie/laravel-permission` — roles defined through seeders
 - Every model change is logged via `spatie/laravel-activitylog`

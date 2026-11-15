@@ -149,7 +149,7 @@
                                             "filters": [
                                                 {
                                                     "field": "body",
-                                                    "value": "Confirm the scope of the first release"
+                                                    "value": "<p>Confirm the scope of the first release</p>"
                                                 }
                                             ]
                                         }
@@ -222,7 +222,7 @@
                                             {
                                                 "operation": "create",
                                                 "attributes": {
-                                                    "body": "Confirm the scope of the first release",
+                                                    "body": "<p>Confirm the scope of the first release</p>",
                                                     "item_id": 1
                                                 }
                                             }
@@ -470,6 +470,7 @@
                                                 "attributes": {
                                                     "title": "Billing revamp",
                                                     "description": "Project to revamp the billing system",
+                                                    "status": "in_progress",
                                                     "type": "task",
                                                     "is_epic": true,
                                                     "parent_id": 1,
@@ -1054,7 +1055,7 @@
                     "body": {
                         "type": "string",
                         "examples": [
-                            "Confirm the scope of the first release"
+                            "<p>Confirm the scope of the first release</p>"
                         ]
                     },
                     "item_id": {
@@ -1279,6 +1280,7 @@
                                     "id",
                                     "title",
                                     "description",
+                                    "status",
                                     "parent_id",
                                     "assignee_id",
                                     "reporter_id",
@@ -1362,7 +1364,7 @@
                         "type": "string",
                         "description": "Rules: string, required",
                         "examples": [
-                            "Confirm the scope of the first release"
+                            "<p>Confirm the scope of the first release</p>"
                         ]
                     },
                     "item_id": {
@@ -2330,6 +2332,7 @@
                         "item.id": "#/components/schemas/CommentFilterItem_Id",
                         "item.title": "#/components/schemas/CommentFilterItem_Title",
                         "item.description": "#/components/schemas/CommentFilterItem_Description",
+                        "item.status": "#/components/schemas/CommentFilterItem_Status",
                         "item.type": "#/components/schemas/CommentFilterItem_Type",
                         "item.is_epic": "#/components/schemas/CommentFilterItem_IsEpic",
                         "item.parent_id": "#/components/schemas/CommentFilterItem_ParentId",
@@ -2372,6 +2375,9 @@
                     },
                     {
                         "$ref": "#/components/schemas/CommentFilterItem_Description"
+                    },
+                    {
+                        "$ref": "#/components/schemas/CommentFilterItem_Status"
                     },
                     {
                         "$ref": "#/components/schemas/CommentFilterItem_Type"
@@ -2916,7 +2922,7 @@
                             "value": {
                                 "type": "string",
                                 "examples": [
-                                    "Confirm the scope of the first release"
+                                    "<p>Confirm the scope of the first release</p>"
                                 ],
                                 "maxLength": 1000
                             },
@@ -2988,7 +2994,7 @@
                                 "items": {
                                     "type": "string",
                                     "examples": [
-                                        "Confirm the scope of the first release"
+                                        "<p>Confirm the scope of the first release</p>"
                                     ],
                                     "maxLength": 1000
                                 },
@@ -3193,117 +3199,35 @@
                 "title": "CommentFilterId"
             },
             "CommentFilterItemId": {
-                "oneOf": [
-                    {
-                        "type": "object",
-                        "properties": {
-                            "field": {
-                                "type": "string",
-                                "const": "item_id"
-                            },
-                            "operator": {
-                                "type": "string",
-                                "enum": [
-                                    "=",
-                                    "!=",
-                                    ">",
-                                    ">=",
-                                    "<",
-                                    "<="
-                                ]
-                            },
-                            "value": {
-                                "type": "integer"
-                            },
-                            "type": {
-                                "type": "string",
-                                "enum": [
-                                    "and",
-                                    "or"
-                                ]
-                            }
-                        },
-                        "required": [
-                            "field",
-                            "value"
-                        ],
-                        "additionalProperties": false
+                "type": "object",
+                "properties": {
+                    "field": {
+                        "type": "string",
+                        "const": "item_id"
                     },
-                    {
-                        "type": "object",
-                        "properties": {
-                            "field": {
-                                "type": "string",
-                                "const": "item_id"
-                            },
-                            "operator": {
-                                "type": "string",
-                                "enum": [
-                                    "between",
-                                    "not between"
-                                ]
-                            },
-                            "value": {
-                                "type": "array",
-                                "items": {
-                                    "type": "integer"
-                                },
-                                "minItems": 2,
-                                "maxItems": 2
-                            },
-                            "type": {
-                                "type": "string",
-                                "enum": [
-                                    "and",
-                                    "or"
-                                ]
-                            }
-                        },
-                        "required": [
-                            "field",
-                            "operator",
-                            "value"
-                        ],
-                        "additionalProperties": false
+                    "operator": {
+                        "type": "string",
+                        "enum": [
+                            "=",
+                            "!="
+                        ]
                     },
-                    {
-                        "type": "object",
-                        "properties": {
-                            "field": {
-                                "type": "string",
-                                "const": "item_id"
-                            },
-                            "operator": {
-                                "type": "string",
-                                "enum": [
-                                    "in",
-                                    "not in"
-                                ]
-                            },
-                            "value": {
-                                "type": "array",
-                                "items": {
-                                    "type": "integer"
-                                },
-                                "minItems": 1,
-                                "maxItems": 100
-                            },
-                            "type": {
-                                "type": "string",
-                                "enum": [
-                                    "and",
-                                    "or"
-                                ]
-                            }
-                        },
-                        "required": [
-                            "field",
-                            "operator",
-                            "value"
-                        ],
-                        "additionalProperties": false
+                    "value": {
+                        "type": "integer"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "and",
+                            "or"
+                        ]
                     }
+                },
+                "required": [
+                    "field",
+                    "value"
                 ],
+                "additionalProperties": false,
                 "title": "CommentFilterItemId"
             },
             "CommentFilterItem_AssigneeId": {
@@ -4171,6 +4095,42 @@
                 ],
                 "title": "CommentFilterItem_ReporterId"
             },
+            "CommentFilterItem_Status": {
+                "type": "object",
+                "properties": {
+                    "field": {
+                        "type": "string",
+                        "const": "item.status"
+                    },
+                    "operator": {
+                        "type": "string",
+                        "enum": [
+                            "=",
+                            "!="
+                        ]
+                    },
+                    "value": {
+                        "type": "string",
+                        "examples": [
+                            "in_progress"
+                        ],
+                        "maxLength": 1000
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "and",
+                            "or"
+                        ]
+                    }
+                },
+                "required": [
+                    "field",
+                    "value"
+                ],
+                "additionalProperties": false,
+                "title": "CommentFilterItem_Status"
+            },
             "CommentFilterItem_Title": {
                 "oneOf": [
                     {
@@ -4486,145 +4446,35 @@
                 "title": "CommentFilterUpdatedAt"
             },
             "CommentFilterUserId": {
-                "oneOf": [
-                    {
-                        "type": "object",
-                        "properties": {
-                            "field": {
-                                "type": "string",
-                                "const": "user_id"
-                            },
-                            "operator": {
-                                "type": "string",
-                                "enum": [
-                                    "=",
-                                    "!=",
-                                    ">",
-                                    ">=",
-                                    "<",
-                                    "<="
-                                ]
-                            },
-                            "value": {
-                                "type": "integer"
-                            },
-                            "type": {
-                                "type": "string",
-                                "enum": [
-                                    "and",
-                                    "or"
-                                ]
-                            }
-                        },
-                        "required": [
-                            "field",
-                            "value"
-                        ],
-                        "additionalProperties": false
+                "type": "object",
+                "properties": {
+                    "field": {
+                        "type": "string",
+                        "const": "user_id"
                     },
-                    {
-                        "type": "object",
-                        "properties": {
-                            "field": {
-                                "type": "string",
-                                "const": "user_id"
-                            },
-                            "operator": {
-                                "type": "string",
-                                "enum": [
-                                    "between",
-                                    "not between"
-                                ]
-                            },
-                            "value": {
-                                "type": "array",
-                                "items": {
-                                    "type": "integer"
-                                },
-                                "minItems": 2,
-                                "maxItems": 2
-                            },
-                            "type": {
-                                "type": "string",
-                                "enum": [
-                                    "and",
-                                    "or"
-                                ]
-                            }
-                        },
-                        "required": [
-                            "field",
-                            "operator",
-                            "value"
-                        ],
-                        "additionalProperties": false
+                    "operator": {
+                        "type": "string",
+                        "enum": [
+                            "=",
+                            "!="
+                        ]
                     },
-                    {
-                        "type": "object",
-                        "properties": {
-                            "field": {
-                                "type": "string",
-                                "const": "user_id"
-                            },
-                            "operator": {
-                                "type": "string",
-                                "enum": [
-                                    "in",
-                                    "not in"
-                                ]
-                            },
-                            "value": {
-                                "type": "array",
-                                "items": {
-                                    "type": "integer"
-                                },
-                                "minItems": 1,
-                                "maxItems": 100
-                            },
-                            "type": {
-                                "type": "string",
-                                "enum": [
-                                    "and",
-                                    "or"
-                                ]
-                            }
-                        },
-                        "required": [
-                            "field",
-                            "operator",
-                            "value"
-                        ],
-                        "additionalProperties": false
+                    "value": {
+                        "type": "integer"
                     },
-                    {
-                        "type": "object",
-                        "properties": {
-                            "field": {
-                                "type": "string",
-                                "const": "user_id"
-                            },
-                            "operator": {
-                                "type": "string",
-                                "enum": [
-                                    "is null",
-                                    "is not null"
-                                ]
-                            },
-                            "type": {
-                                "type": "string",
-                                "enum": [
-                                    "and",
-                                    "or"
-                                ]
-                            }
-                        },
-                        "required": [
-                            "field",
-                            "operator"
-                        ],
-                        "additionalProperties": false
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "and",
+                            "or"
+                        ]
                     }
+                },
+                "required": [
+                    "field",
+                    "value"
                 ],
+                "additionalProperties": false,
                 "title": "CommentFilterUserId"
             },
             "CommentInclude": {
@@ -5195,13 +5045,12 @@
                         "enum": [
                             "id",
                             "body",
-                            "item_id",
-                            "user_id",
                             "created_at",
                             "updated_at",
                             "item.id",
                             "item.title",
                             "item.description",
+                            "item.status",
                             "item.parent_id",
                             "item.assignee_id",
                             "item.reporter_id",
@@ -5237,7 +5086,7 @@
                         "type": "string",
                         "description": "Rules: string",
                         "examples": [
-                            "Confirm the scope of the first release"
+                            "<p>Confirm the scope of the first release</p>"
                         ]
                     }
                 },
@@ -5264,6 +5113,12 @@
                         ],
                         "examples": [
                             "Project to revamp the billing system"
+                        ]
+                    },
+                    "status": {
+                        "type": "string",
+                        "examples": [
+                            "in_progress"
                         ]
                     },
                     "type": {
@@ -5596,6 +5451,7 @@
                                     "id",
                                     "title",
                                     "description",
+                                    "status",
                                     "parent_id",
                                     "assignee_id",
                                     "reporter_id",
@@ -5726,52 +5582,8 @@
                                 "enum": [
                                     "id",
                                     "body",
-                                    "item_id",
-                                    "user_id",
                                     "created_at",
                                     "updated_at"
-                                ]
-                            },
-                            "alias": {
-                                "type": "string",
-                                "description": "The key of the value in each row; by default the relation, the type and the field in snake case, such as `comments_max_rating`.",
-                                "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
-                                "maxLength": 255
-                            },
-                            "filters": {
-                                "type": "array",
-                                "items": {
-                                    "$ref": "#/components/schemas/CommentFilter"
-                                },
-                                "maxItems": 100
-                            }
-                        },
-                        "required": [
-                            "relation",
-                            "type",
-                            "field"
-                        ],
-                        "additionalProperties": false
-                    },
-                    {
-                        "type": "object",
-                        "properties": {
-                            "relation": {
-                                "type": "string",
-                                "const": "comments"
-                            },
-                            "type": {
-                                "type": "string",
-                                "enum": [
-                                    "avg",
-                                    "sum"
-                                ]
-                            },
-                            "field": {
-                                "type": "string",
-                                "enum": [
-                                    "item_id",
-                                    "user_id"
                                 ]
                             },
                             "alias": {
@@ -5938,6 +5750,7 @@
                                     "id",
                                     "title",
                                     "description",
+                                    "status",
                                     "parent_id",
                                     "assignee_id",
                                     "reporter_id",
@@ -6116,6 +5929,13 @@
                         "description": "Rules: nullable, string",
                         "examples": [
                             "Project to revamp the billing system"
+                        ]
+                    },
+                    "status": {
+                        "type": "string",
+                        "description": "Rules: string, in:\"todo\",\"in_progress\",\"review\",\"done\"",
+                        "examples": [
+                            "in_progress"
                         ]
                     },
                     "type": {
@@ -6420,6 +6240,7 @@
                                                 "id",
                                                 "title",
                                                 "description",
+                                                "status",
                                                 "type",
                                                 "is_epic",
                                                 "parent_id",
@@ -7121,6 +6942,7 @@
                         "id": "#/components/schemas/ItemFilterId",
                         "title": "#/components/schemas/ItemFilterTitle",
                         "description": "#/components/schemas/ItemFilterDescription",
+                        "status": "#/components/schemas/ItemFilterStatus",
                         "type": "#/components/schemas/ItemFilterType",
                         "is_epic": "#/components/schemas/ItemFilterIsEpic",
                         "parent_id": "#/components/schemas/ItemFilterParentId",
@@ -7132,6 +6954,7 @@
                         "parent.id": "#/components/schemas/ItemFilterParent_Id",
                         "parent.title": "#/components/schemas/ItemFilterParent_Title",
                         "parent.description": "#/components/schemas/ItemFilterParent_Description",
+                        "parent.status": "#/components/schemas/ItemFilterParent_Status",
                         "parent.type": "#/components/schemas/ItemFilterParent_Type",
                         "parent.is_epic": "#/components/schemas/ItemFilterParent_IsEpic",
                         "parent.parent_id": "#/components/schemas/ItemFilterParent_ParentId",
@@ -7143,6 +6966,7 @@
                         "children.id": "#/components/schemas/ItemFilterChildren_Id",
                         "children.title": "#/components/schemas/ItemFilterChildren_Title",
                         "children.description": "#/components/schemas/ItemFilterChildren_Description",
+                        "children.status": "#/components/schemas/ItemFilterChildren_Status",
                         "children.type": "#/components/schemas/ItemFilterChildren_Type",
                         "children.is_epic": "#/components/schemas/ItemFilterChildren_IsEpic",
                         "children.parent_id": "#/components/schemas/ItemFilterChildren_ParentId",
@@ -7185,6 +7009,9 @@
                         "$ref": "#/components/schemas/ItemFilterDescription"
                     },
                     {
+                        "$ref": "#/components/schemas/ItemFilterStatus"
+                    },
+                    {
                         "$ref": "#/components/schemas/ItemFilterType"
                     },
                     {
@@ -7218,6 +7045,9 @@
                         "$ref": "#/components/schemas/ItemFilterParent_Description"
                     },
                     {
+                        "$ref": "#/components/schemas/ItemFilterParent_Status"
+                    },
+                    {
                         "$ref": "#/components/schemas/ItemFilterParent_Type"
                     },
                     {
@@ -7249,6 +7079,9 @@
                     },
                     {
                         "$ref": "#/components/schemas/ItemFilterChildren_Description"
+                    },
+                    {
+                        "$ref": "#/components/schemas/ItemFilterChildren_Status"
                     },
                     {
                         "$ref": "#/components/schemas/ItemFilterChildren_Type"
@@ -8829,6 +8662,42 @@
                 ],
                 "title": "ItemFilterChildren_ReporterId"
             },
+            "ItemFilterChildren_Status": {
+                "type": "object",
+                "properties": {
+                    "field": {
+                        "type": "string",
+                        "const": "children.status"
+                    },
+                    "operator": {
+                        "type": "string",
+                        "enum": [
+                            "=",
+                            "!="
+                        ]
+                    },
+                    "value": {
+                        "type": "string",
+                        "examples": [
+                            "in_progress"
+                        ],
+                        "maxLength": 1000
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "and",
+                            "or"
+                        ]
+                    }
+                },
+                "required": [
+                    "field",
+                    "value"
+                ],
+                "additionalProperties": false,
+                "title": "ItemFilterChildren_Status"
+            },
             "ItemFilterChildren_Title": {
                 "oneOf": [
                     {
@@ -9081,7 +8950,7 @@
                             "value": {
                                 "type": "string",
                                 "examples": [
-                                    "Confirm the scope of the first release"
+                                    "<p>Confirm the scope of the first release</p>"
                                 ],
                                 "maxLength": 1000
                             },
@@ -9153,7 +9022,7 @@
                                 "items": {
                                     "type": "string",
                                     "examples": [
-                                        "Confirm the scope of the first release"
+                                        "<p>Confirm the scope of the first release</p>"
                                     ],
                                     "maxLength": 1000
                                 },
@@ -9333,117 +9202,35 @@
                 "title": "ItemFilterComments_Id"
             },
             "ItemFilterComments_ItemId": {
-                "oneOf": [
-                    {
-                        "type": "object",
-                        "properties": {
-                            "field": {
-                                "type": "string",
-                                "const": "comments.item_id"
-                            },
-                            "operator": {
-                                "type": "string",
-                                "enum": [
-                                    "=",
-                                    "!=",
-                                    ">",
-                                    ">=",
-                                    "<",
-                                    "<="
-                                ]
-                            },
-                            "value": {
-                                "type": "integer"
-                            },
-                            "type": {
-                                "type": "string",
-                                "enum": [
-                                    "and",
-                                    "or"
-                                ]
-                            }
-                        },
-                        "required": [
-                            "field",
-                            "value"
-                        ],
-                        "additionalProperties": false
+                "type": "object",
+                "properties": {
+                    "field": {
+                        "type": "string",
+                        "const": "comments.item_id"
                     },
-                    {
-                        "type": "object",
-                        "properties": {
-                            "field": {
-                                "type": "string",
-                                "const": "comments.item_id"
-                            },
-                            "operator": {
-                                "type": "string",
-                                "enum": [
-                                    "between",
-                                    "not between"
-                                ]
-                            },
-                            "value": {
-                                "type": "array",
-                                "items": {
-                                    "type": "integer"
-                                },
-                                "minItems": 2,
-                                "maxItems": 2
-                            },
-                            "type": {
-                                "type": "string",
-                                "enum": [
-                                    "and",
-                                    "or"
-                                ]
-                            }
-                        },
-                        "required": [
-                            "field",
-                            "operator",
-                            "value"
-                        ],
-                        "additionalProperties": false
+                    "operator": {
+                        "type": "string",
+                        "enum": [
+                            "=",
+                            "!="
+                        ]
                     },
-                    {
-                        "type": "object",
-                        "properties": {
-                            "field": {
-                                "type": "string",
-                                "const": "comments.item_id"
-                            },
-                            "operator": {
-                                "type": "string",
-                                "enum": [
-                                    "in",
-                                    "not in"
-                                ]
-                            },
-                            "value": {
-                                "type": "array",
-                                "items": {
-                                    "type": "integer"
-                                },
-                                "minItems": 1,
-                                "maxItems": 100
-                            },
-                            "type": {
-                                "type": "string",
-                                "enum": [
-                                    "and",
-                                    "or"
-                                ]
-                            }
-                        },
-                        "required": [
-                            "field",
-                            "operator",
-                            "value"
-                        ],
-                        "additionalProperties": false
+                    "value": {
+                        "type": "integer"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "and",
+                            "or"
+                        ]
                     }
+                },
+                "required": [
+                    "field",
+                    "value"
                 ],
+                "additionalProperties": false,
                 "title": "ItemFilterComments_ItemId"
             },
             "ItemFilterComments_UpdatedAt": {
@@ -9528,145 +9315,35 @@
                 "title": "ItemFilterComments_UpdatedAt"
             },
             "ItemFilterComments_UserId": {
-                "oneOf": [
-                    {
-                        "type": "object",
-                        "properties": {
-                            "field": {
-                                "type": "string",
-                                "const": "comments.user_id"
-                            },
-                            "operator": {
-                                "type": "string",
-                                "enum": [
-                                    "=",
-                                    "!=",
-                                    ">",
-                                    ">=",
-                                    "<",
-                                    "<="
-                                ]
-                            },
-                            "value": {
-                                "type": "integer"
-                            },
-                            "type": {
-                                "type": "string",
-                                "enum": [
-                                    "and",
-                                    "or"
-                                ]
-                            }
-                        },
-                        "required": [
-                            "field",
-                            "value"
-                        ],
-                        "additionalProperties": false
+                "type": "object",
+                "properties": {
+                    "field": {
+                        "type": "string",
+                        "const": "comments.user_id"
                     },
-                    {
-                        "type": "object",
-                        "properties": {
-                            "field": {
-                                "type": "string",
-                                "const": "comments.user_id"
-                            },
-                            "operator": {
-                                "type": "string",
-                                "enum": [
-                                    "between",
-                                    "not between"
-                                ]
-                            },
-                            "value": {
-                                "type": "array",
-                                "items": {
-                                    "type": "integer"
-                                },
-                                "minItems": 2,
-                                "maxItems": 2
-                            },
-                            "type": {
-                                "type": "string",
-                                "enum": [
-                                    "and",
-                                    "or"
-                                ]
-                            }
-                        },
-                        "required": [
-                            "field",
-                            "operator",
-                            "value"
-                        ],
-                        "additionalProperties": false
+                    "operator": {
+                        "type": "string",
+                        "enum": [
+                            "=",
+                            "!="
+                        ]
                     },
-                    {
-                        "type": "object",
-                        "properties": {
-                            "field": {
-                                "type": "string",
-                                "const": "comments.user_id"
-                            },
-                            "operator": {
-                                "type": "string",
-                                "enum": [
-                                    "in",
-                                    "not in"
-                                ]
-                            },
-                            "value": {
-                                "type": "array",
-                                "items": {
-                                    "type": "integer"
-                                },
-                                "minItems": 1,
-                                "maxItems": 100
-                            },
-                            "type": {
-                                "type": "string",
-                                "enum": [
-                                    "and",
-                                    "or"
-                                ]
-                            }
-                        },
-                        "required": [
-                            "field",
-                            "operator",
-                            "value"
-                        ],
-                        "additionalProperties": false
+                    "value": {
+                        "type": "integer"
                     },
-                    {
-                        "type": "object",
-                        "properties": {
-                            "field": {
-                                "type": "string",
-                                "const": "comments.user_id"
-                            },
-                            "operator": {
-                                "type": "string",
-                                "enum": [
-                                    "is null",
-                                    "is not null"
-                                ]
-                            },
-                            "type": {
-                                "type": "string",
-                                "enum": [
-                                    "and",
-                                    "or"
-                                ]
-                            }
-                        },
-                        "required": [
-                            "field",
-                            "operator"
-                        ],
-                        "additionalProperties": false
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "and",
+                            "or"
+                        ]
                     }
+                },
+                "required": [
+                    "field",
+                    "value"
                 ],
+                "additionalProperties": false,
                 "title": "ItemFilterComments_UserId"
             },
             "ItemFilterCreatedAt": {
@@ -11607,6 +11284,42 @@
                 ],
                 "title": "ItemFilterParent_ReporterId"
             },
+            "ItemFilterParent_Status": {
+                "type": "object",
+                "properties": {
+                    "field": {
+                        "type": "string",
+                        "const": "parent.status"
+                    },
+                    "operator": {
+                        "type": "string",
+                        "enum": [
+                            "=",
+                            "!="
+                        ]
+                    },
+                    "value": {
+                        "type": "string",
+                        "examples": [
+                            "in_progress"
+                        ],
+                        "maxLength": 1000
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "and",
+                            "or"
+                        ]
+                    }
+                },
+                "required": [
+                    "field",
+                    "value"
+                ],
+                "additionalProperties": false,
+                "title": "ItemFilterParent_Status"
+            },
             "ItemFilterParent_Title": {
                 "oneOf": [
                     {
@@ -12448,6 +12161,42 @@
                     }
                 ],
                 "title": "ItemFilterReporter_UpdatedAt"
+            },
+            "ItemFilterStatus": {
+                "type": "object",
+                "properties": {
+                    "field": {
+                        "type": "string",
+                        "const": "status"
+                    },
+                    "operator": {
+                        "type": "string",
+                        "enum": [
+                            "=",
+                            "!="
+                        ]
+                    },
+                    "value": {
+                        "type": "string",
+                        "examples": [
+                            "in_progress"
+                        ],
+                        "maxLength": 1000
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "and",
+                            "or"
+                        ]
+                    }
+                },
+                "required": [
+                    "field",
+                    "value"
+                ],
+                "additionalProperties": false,
+                "title": "ItemFilterStatus"
             },
             "ItemFilterTitle": {
                 "oneOf": [
@@ -13774,6 +13523,7 @@
                             "id",
                             "title",
                             "description",
+                            "status",
                             "type",
                             "is_epic",
                             "parent_id",
@@ -13801,6 +13551,7 @@
                             "id",
                             "title",
                             "description",
+                            "status",
                             "is_epic",
                             "parent_id",
                             "assignee_id",
@@ -13811,6 +13562,7 @@
                             "parent.id",
                             "parent.title",
                             "parent.description",
+                            "parent.status",
                             "parent.parent_id",
                             "parent.assignee_id",
                             "parent.reporter_id",
@@ -13830,11 +13582,13 @@
                             "children_count",
                             "children_min_title",
                             "children_min_description",
+                            "children_min_status",
                             "children_min_due_date",
                             "children_min_created_at",
                             "children_min_updated_at",
                             "children_max_title",
                             "children_max_description",
+                            "children_max_status",
                             "children_max_due_date",
                             "children_max_created_at",
                             "children_max_updated_at",
@@ -13892,6 +13646,13 @@
                         "description": "Rules: nullable, string",
                         "examples": [
                             "Project to revamp the billing system"
+                        ]
+                    },
+                    "status": {
+                        "type": "string",
+                        "description": "Rules: string, in:\"todo\",\"in_progress\",\"review\",\"done\", filled",
+                        "examples": [
+                            "in_progress"
                         ]
                     },
                     "type": {
@@ -14087,6 +13848,7 @@
                                     "id",
                                     "title",
                                     "description",
+                                    "status",
                                     "parent_id",
                                     "assignee_id",
                                     "reporter_id",
@@ -15128,6 +14890,7 @@
                         "items.id": "#/components/schemas/LabelFilterItems_Id",
                         "items.title": "#/components/schemas/LabelFilterItems_Title",
                         "items.description": "#/components/schemas/LabelFilterItems_Description",
+                        "items.status": "#/components/schemas/LabelFilterItems_Status",
                         "items.type": "#/components/schemas/LabelFilterItems_Type",
                         "items.is_epic": "#/components/schemas/LabelFilterItems_IsEpic",
                         "items.parent_id": "#/components/schemas/LabelFilterItems_ParentId",
@@ -15162,6 +14925,9 @@
                     },
                     {
                         "$ref": "#/components/schemas/LabelFilterItems_Description"
+                    },
+                    {
+                        "$ref": "#/components/schemas/LabelFilterItems_Status"
                     },
                     {
                         "$ref": "#/components/schemas/LabelFilterItems_Type"
@@ -16365,6 +16131,42 @@
                 ],
                 "title": "LabelFilterItems_ReporterId"
             },
+            "LabelFilterItems_Status": {
+                "type": "object",
+                "properties": {
+                    "field": {
+                        "type": "string",
+                        "const": "items.status"
+                    },
+                    "operator": {
+                        "type": "string",
+                        "enum": [
+                            "=",
+                            "!="
+                        ]
+                    },
+                    "value": {
+                        "type": "string",
+                        "examples": [
+                            "in_progress"
+                        ],
+                        "maxLength": 1000
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "and",
+                            "or"
+                        ]
+                    }
+                },
+                "required": [
+                    "field",
+                    "value"
+                ],
+                "additionalProperties": false,
+                "title": "LabelFilterItems_Status"
+            },
             "LabelFilterItems_Title": {
                 "oneOf": [
                     {
@@ -17274,11 +17076,13 @@
                             "items_count",
                             "items_min_title",
                             "items_min_description",
+                            "items_min_status",
                             "items_min_due_date",
                             "items_min_created_at",
                             "items_min_updated_at",
                             "items_max_title",
                             "items_max_description",
+                            "items_max_status",
                             "items_max_due_date",
                             "items_max_created_at",
                             "items_max_updated_at",
@@ -17799,6 +17603,7 @@
                                     "id",
                                     "title",
                                     "description",
+                                    "status",
                                     "parent_id",
                                     "assignee_id",
                                     "reporter_id",
@@ -17929,52 +17734,8 @@
                                 "enum": [
                                     "id",
                                     "body",
-                                    "item_id",
-                                    "user_id",
                                     "created_at",
                                     "updated_at"
-                                ]
-                            },
-                            "alias": {
-                                "type": "string",
-                                "description": "The key of the value in each row; by default the relation, the type and the field in snake case, such as `comments_max_rating`.",
-                                "pattern": "^[A-Za-z_][A-Za-z0-9_]*$",
-                                "maxLength": 255
-                            },
-                            "filters": {
-                                "type": "array",
-                                "items": {
-                                    "$ref": "#/components/schemas/CommentFilter"
-                                },
-                                "maxItems": 100
-                            }
-                        },
-                        "required": [
-                            "relation",
-                            "type",
-                            "field"
-                        ],
-                        "additionalProperties": false
-                    },
-                    {
-                        "type": "object",
-                        "properties": {
-                            "relation": {
-                                "type": "string",
-                                "const": "comments"
-                            },
-                            "type": {
-                                "type": "string",
-                                "enum": [
-                                    "avg",
-                                    "sum"
-                                ]
-                            },
-                            "field": {
-                                "type": "string",
-                                "enum": [
-                                    "item_id",
-                                    "user_id"
                                 ]
                             },
                             "alias": {
@@ -18057,6 +17818,7 @@
                                     "id",
                                     "title",
                                     "description",
+                                    "status",
                                     "parent_id",
                                     "assignee_id",
                                     "reporter_id",
@@ -19105,6 +18867,7 @@
                         "assignedItems.id": "#/components/schemas/UserFilterAssignedItems_Id",
                         "assignedItems.title": "#/components/schemas/UserFilterAssignedItems_Title",
                         "assignedItems.description": "#/components/schemas/UserFilterAssignedItems_Description",
+                        "assignedItems.status": "#/components/schemas/UserFilterAssignedItems_Status",
                         "assignedItems.type": "#/components/schemas/UserFilterAssignedItems_Type",
                         "assignedItems.is_epic": "#/components/schemas/UserFilterAssignedItems_IsEpic",
                         "assignedItems.parent_id": "#/components/schemas/UserFilterAssignedItems_ParentId",
@@ -19116,6 +18879,7 @@
                         "reportedItems.id": "#/components/schemas/UserFilterReportedItems_Id",
                         "reportedItems.title": "#/components/schemas/UserFilterReportedItems_Title",
                         "reportedItems.description": "#/components/schemas/UserFilterReportedItems_Description",
+                        "reportedItems.status": "#/components/schemas/UserFilterReportedItems_Status",
                         "reportedItems.type": "#/components/schemas/UserFilterReportedItems_Type",
                         "reportedItems.is_epic": "#/components/schemas/UserFilterReportedItems_IsEpic",
                         "reportedItems.parent_id": "#/components/schemas/UserFilterReportedItems_ParentId",
@@ -19158,6 +18922,9 @@
                         "$ref": "#/components/schemas/UserFilterAssignedItems_Description"
                     },
                     {
+                        "$ref": "#/components/schemas/UserFilterAssignedItems_Status"
+                    },
+                    {
                         "$ref": "#/components/schemas/UserFilterAssignedItems_Type"
                     },
                     {
@@ -19189,6 +18956,9 @@
                     },
                     {
                         "$ref": "#/components/schemas/UserFilterReportedItems_Description"
+                    },
+                    {
+                        "$ref": "#/components/schemas/UserFilterReportedItems_Status"
                     },
                     {
                         "$ref": "#/components/schemas/UserFilterReportedItems_Type"
@@ -20115,6 +19885,42 @@
                 ],
                 "title": "UserFilterAssignedItems_ReporterId"
             },
+            "UserFilterAssignedItems_Status": {
+                "type": "object",
+                "properties": {
+                    "field": {
+                        "type": "string",
+                        "const": "assignedItems.status"
+                    },
+                    "operator": {
+                        "type": "string",
+                        "enum": [
+                            "=",
+                            "!="
+                        ]
+                    },
+                    "value": {
+                        "type": "string",
+                        "examples": [
+                            "in_progress"
+                        ],
+                        "maxLength": 1000
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "and",
+                            "or"
+                        ]
+                    }
+                },
+                "required": [
+                    "field",
+                    "value"
+                ],
+                "additionalProperties": false,
+                "title": "UserFilterAssignedItems_Status"
+            },
             "UserFilterAssignedItems_Title": {
                 "oneOf": [
                     {
@@ -20367,7 +20173,7 @@
                             "value": {
                                 "type": "string",
                                 "examples": [
-                                    "Confirm the scope of the first release"
+                                    "<p>Confirm the scope of the first release</p>"
                                 ],
                                 "maxLength": 1000
                             },
@@ -20439,7 +20245,7 @@
                                 "items": {
                                     "type": "string",
                                     "examples": [
-                                        "Confirm the scope of the first release"
+                                        "<p>Confirm the scope of the first release</p>"
                                     ],
                                     "maxLength": 1000
                                 },
@@ -20619,117 +20425,35 @@
                 "title": "UserFilterComments_Id"
             },
             "UserFilterComments_ItemId": {
-                "oneOf": [
-                    {
-                        "type": "object",
-                        "properties": {
-                            "field": {
-                                "type": "string",
-                                "const": "comments.item_id"
-                            },
-                            "operator": {
-                                "type": "string",
-                                "enum": [
-                                    "=",
-                                    "!=",
-                                    ">",
-                                    ">=",
-                                    "<",
-                                    "<="
-                                ]
-                            },
-                            "value": {
-                                "type": "integer"
-                            },
-                            "type": {
-                                "type": "string",
-                                "enum": [
-                                    "and",
-                                    "or"
-                                ]
-                            }
-                        },
-                        "required": [
-                            "field",
-                            "value"
-                        ],
-                        "additionalProperties": false
+                "type": "object",
+                "properties": {
+                    "field": {
+                        "type": "string",
+                        "const": "comments.item_id"
                     },
-                    {
-                        "type": "object",
-                        "properties": {
-                            "field": {
-                                "type": "string",
-                                "const": "comments.item_id"
-                            },
-                            "operator": {
-                                "type": "string",
-                                "enum": [
-                                    "between",
-                                    "not between"
-                                ]
-                            },
-                            "value": {
-                                "type": "array",
-                                "items": {
-                                    "type": "integer"
-                                },
-                                "minItems": 2,
-                                "maxItems": 2
-                            },
-                            "type": {
-                                "type": "string",
-                                "enum": [
-                                    "and",
-                                    "or"
-                                ]
-                            }
-                        },
-                        "required": [
-                            "field",
-                            "operator",
-                            "value"
-                        ],
-                        "additionalProperties": false
+                    "operator": {
+                        "type": "string",
+                        "enum": [
+                            "=",
+                            "!="
+                        ]
                     },
-                    {
-                        "type": "object",
-                        "properties": {
-                            "field": {
-                                "type": "string",
-                                "const": "comments.item_id"
-                            },
-                            "operator": {
-                                "type": "string",
-                                "enum": [
-                                    "in",
-                                    "not in"
-                                ]
-                            },
-                            "value": {
-                                "type": "array",
-                                "items": {
-                                    "type": "integer"
-                                },
-                                "minItems": 1,
-                                "maxItems": 100
-                            },
-                            "type": {
-                                "type": "string",
-                                "enum": [
-                                    "and",
-                                    "or"
-                                ]
-                            }
-                        },
-                        "required": [
-                            "field",
-                            "operator",
-                            "value"
-                        ],
-                        "additionalProperties": false
+                    "value": {
+                        "type": "integer"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "and",
+                            "or"
+                        ]
                     }
+                },
+                "required": [
+                    "field",
+                    "value"
                 ],
+                "additionalProperties": false,
                 "title": "UserFilterComments_ItemId"
             },
             "UserFilterComments_UpdatedAt": {
@@ -20814,145 +20538,35 @@
                 "title": "UserFilterComments_UpdatedAt"
             },
             "UserFilterComments_UserId": {
-                "oneOf": [
-                    {
-                        "type": "object",
-                        "properties": {
-                            "field": {
-                                "type": "string",
-                                "const": "comments.user_id"
-                            },
-                            "operator": {
-                                "type": "string",
-                                "enum": [
-                                    "=",
-                                    "!=",
-                                    ">",
-                                    ">=",
-                                    "<",
-                                    "<="
-                                ]
-                            },
-                            "value": {
-                                "type": "integer"
-                            },
-                            "type": {
-                                "type": "string",
-                                "enum": [
-                                    "and",
-                                    "or"
-                                ]
-                            }
-                        },
-                        "required": [
-                            "field",
-                            "value"
-                        ],
-                        "additionalProperties": false
+                "type": "object",
+                "properties": {
+                    "field": {
+                        "type": "string",
+                        "const": "comments.user_id"
                     },
-                    {
-                        "type": "object",
-                        "properties": {
-                            "field": {
-                                "type": "string",
-                                "const": "comments.user_id"
-                            },
-                            "operator": {
-                                "type": "string",
-                                "enum": [
-                                    "between",
-                                    "not between"
-                                ]
-                            },
-                            "value": {
-                                "type": "array",
-                                "items": {
-                                    "type": "integer"
-                                },
-                                "minItems": 2,
-                                "maxItems": 2
-                            },
-                            "type": {
-                                "type": "string",
-                                "enum": [
-                                    "and",
-                                    "or"
-                                ]
-                            }
-                        },
-                        "required": [
-                            "field",
-                            "operator",
-                            "value"
-                        ],
-                        "additionalProperties": false
+                    "operator": {
+                        "type": "string",
+                        "enum": [
+                            "=",
+                            "!="
+                        ]
                     },
-                    {
-                        "type": "object",
-                        "properties": {
-                            "field": {
-                                "type": "string",
-                                "const": "comments.user_id"
-                            },
-                            "operator": {
-                                "type": "string",
-                                "enum": [
-                                    "in",
-                                    "not in"
-                                ]
-                            },
-                            "value": {
-                                "type": "array",
-                                "items": {
-                                    "type": "integer"
-                                },
-                                "minItems": 1,
-                                "maxItems": 100
-                            },
-                            "type": {
-                                "type": "string",
-                                "enum": [
-                                    "and",
-                                    "or"
-                                ]
-                            }
-                        },
-                        "required": [
-                            "field",
-                            "operator",
-                            "value"
-                        ],
-                        "additionalProperties": false
+                    "value": {
+                        "type": "integer"
                     },
-                    {
-                        "type": "object",
-                        "properties": {
-                            "field": {
-                                "type": "string",
-                                "const": "comments.user_id"
-                            },
-                            "operator": {
-                                "type": "string",
-                                "enum": [
-                                    "is null",
-                                    "is not null"
-                                ]
-                            },
-                            "type": {
-                                "type": "string",
-                                "enum": [
-                                    "and",
-                                    "or"
-                                ]
-                            }
-                        },
-                        "required": [
-                            "field",
-                            "operator"
-                        ],
-                        "additionalProperties": false
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "and",
+                            "or"
+                        ]
                     }
+                },
+                "required": [
+                    "field",
+                    "value"
                 ],
+                "additionalProperties": false,
                 "title": "UserFilterComments_UserId"
             },
             "UserFilterCreatedAt": {
@@ -22231,6 +21845,42 @@
                 ],
                 "title": "UserFilterReportedItems_ReporterId"
             },
+            "UserFilterReportedItems_Status": {
+                "type": "object",
+                "properties": {
+                    "field": {
+                        "type": "string",
+                        "const": "reportedItems.status"
+                    },
+                    "operator": {
+                        "type": "string",
+                        "enum": [
+                            "=",
+                            "!="
+                        ]
+                    },
+                    "value": {
+                        "type": "string",
+                        "examples": [
+                            "in_progress"
+                        ],
+                        "maxLength": 1000
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "and",
+                            "or"
+                        ]
+                    }
+                },
+                "required": [
+                    "field",
+                    "value"
+                ],
+                "additionalProperties": false,
+                "title": "UserFilterReportedItems_Status"
+            },
             "UserFilterReportedItems_Title": {
                 "oneOf": [
                     {
@@ -23240,11 +22890,13 @@
                             "assigned_items_count",
                             "assigned_items_min_title",
                             "assigned_items_min_description",
+                            "assigned_items_min_status",
                             "assigned_items_min_due_date",
                             "assigned_items_min_created_at",
                             "assigned_items_min_updated_at",
                             "assigned_items_max_title",
                             "assigned_items_max_description",
+                            "assigned_items_max_status",
                             "assigned_items_max_due_date",
                             "assigned_items_max_created_at",
                             "assigned_items_max_updated_at",
@@ -23252,11 +22904,13 @@
                             "reported_items_count",
                             "reported_items_min_title",
                             "reported_items_min_description",
+                            "reported_items_min_status",
                             "reported_items_min_due_date",
                             "reported_items_min_created_at",
                             "reported_items_min_updated_at",
                             "reported_items_max_title",
                             "reported_items_max_description",
+                            "reported_items_max_status",
                             "reported_items_max_due_date",
                             "reported_items_max_created_at",
                             "reported_items_max_updated_at",

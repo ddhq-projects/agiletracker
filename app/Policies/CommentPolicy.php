@@ -20,8 +20,8 @@ class CommentPolicy
     }
 
     /**
-     * The field rule guarantees that `item_id` names an existing, non-trashed
-     * item, so the policy only decides that the user may comment at all.
+     * The commentable and commenter are filled by the application, so the
+     * policy only decides that the user may comment at all.
      */
     public function create(User $user, mixed $draft = null): bool
     {
@@ -38,8 +38,21 @@ class CommentPolicy
         return $this->isAuthorOrAdmin($user, $comment);
     }
 
+    /**
+     * The package caps the thread depth in `comments.threading.max_depth`.
+     */
+    public function reply(User $user, Comment $comment): bool
+    {
+        return $comment->canReply();
+    }
+
+    public function pin(User $user, Comment $comment): bool
+    {
+        return $this->isAuthorOrAdmin($user, $comment);
+    }
+
     private function isAuthorOrAdmin(User $user, Comment $comment): bool
     {
-        return $comment->user_id === $user->getKey() || $user->hasRole('admin');
+        return $comment->commenter_id === $user->getKey() || $user->hasRole('admin');
     }
 }

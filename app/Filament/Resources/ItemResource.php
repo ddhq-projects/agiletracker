@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Enums\ItemStatus;
 use App\Filament\Resources\ItemResource\Pages;
 use App\Filament\Resources\ItemResource\RelationManagers;
 use App\Models\Item;
@@ -71,6 +72,11 @@ class ItemResource extends Resource
                         ->relationship('parent', 'title')
                         ->searchable()
                         ->nullable(),
+
+                    Forms\Components\Select::make('status')
+                        ->options(ItemStatus::class)
+                        ->default(ItemStatus::Todo)
+                        ->required(),
 
                     Forms\Components\Select::make('labels')
                         ->label('Labels')
@@ -180,6 +186,10 @@ class ItemResource extends Resource
                             ->color(fn ($record) => $record->labels->first()?->color ?? 'gray')
                             ->default('—'),
 
+                        Infolists\Components\TextEntry::make('status')
+                            ->label('Status')
+                            ->badge(),
+
                     ]),
 
                 Section::make('Participants')
@@ -254,6 +264,10 @@ class ItemResource extends Resource
                     ->limit(60)
                     ->url(fn (?Item $record): string => $record ? ItemResource::getUrl('view', ['record' => $record]) : '#'),
 
+                Tables\Columns\TextColumn::make('status')
+                    ->badge()
+                    ->sortable(),
+
                 Tables\Columns\TextColumn::make('labels.name')
                     ->label('Labels')
                     ->badge()
@@ -300,6 +314,9 @@ class ItemResource extends Resource
                     ->limit(30),
             ])
             ->filters([
+                Tables\Filters\SelectFilter::make('status')
+                    ->options(ItemStatus::class),
+
                 Tables\Filters\SelectFilter::make('labels')
                     ->relationship('labels', 'name')
                     ->label('Label'),
@@ -325,7 +342,6 @@ class ItemResource extends Resource
 
                 DeleteBulkAction::make(),
             ])
-            ->reorderable('position')
             ->defaultSort('position');
     }
 
@@ -344,7 +360,6 @@ class ItemResource extends Resource
     public static function getRelations(): array
     {
         return [
-            RelationManagers\CommentsRelationManager::class,
             RelationManagers\ChildrenRelationManager::class,
         ];
     }

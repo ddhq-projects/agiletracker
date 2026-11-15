@@ -1,15 +1,26 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Filament\Pages;
 
+use App\Enums\ItemStatus;
+use App\Filament\Resources\ItemResource;
 use App\Models\Item;
-use App\Models\Label;
 use BackedEnum;
-use Filament\Pages\Page;
-use Livewire\Attributes\On;
+use Filament\Actions\Action;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Schemas\Components\Flex;
+use Filament\Schemas\Schema;
+use Filament\Tables\Filters\SelectFilter;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Relaticle\Flowforge\Board;
+use Relaticle\Flowforge\BoardPage;
+use Relaticle\Flowforge\Column;
 use UnitEnum;
 
-class KanbanBoard extends Page
+class KanbanBoard extends BoardPage
 {
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-view-columns';
 
@@ -19,45 +30,76 @@ class KanbanBoard extends Page
 
     protected static ?int $navigationSort = 2;
 
-    protected string $view = 'filament.pages.kanban-board';
+    protected static ?string $title = 'Kanban';
 
-    public ?int $projectId = null;
-
-    public array $columns = [
-        'todo' => 'To Do',
-        'in_progress' => 'In Progress',
-        'review' => 'Review',
-        'done' => 'Done',
-    ];
-
-    public function getItemsByStatus(): array
+    public function board(Board $board): Board
     {
-        $query = Item::with(['assignee', 'labels'])
-            ->orderBy('position');
+        return $board
+            ->query(Item::query()->with(['assignee', 'labels']))
+            ->columnIdentifier('status')
+            ->positionIdentifier('position')
+            ->recordTitleAttribute('title')
+            ->columns(fn (): array => array_map(
+                fn (ItemStatus $status): Column => Column::enum($status),
+                ItemStatus::cases(),
+            ))
+            ->filters([
+                SelectFilter::make('labels')
+                    ->relationship('labels', 'name')
+                    ->label('Label'),
 
-        if ($this->projectId) {
-            $query->where('parent_id', $this->projectId);
-        }
+                SelectFilter::make('assignee_id')
+                    ->relationship('assignee', 'name')
+                    ->label('Assignee'),
+            ])
+            ->cardSchema(fn (Schema $schema): Schema => $schema->components([
+                TextEntry::make('labels.name')
+                    ->hiddenLabel()
+                    ->badge()
+                    ->placeholder(''),
 
-        return $query
-            ->get()
-            ->groupBy(fn (Item $item) => $item->labels->pluck('name')->sort()->join(', ') ?: 'no-label')
-            ->map(fn ($group) => $group->toArray())
-            ->toArray();
+                Flex::make([
+                    TextEntry::make('assignee.name')
+                        ->hiddenLabel()
+                        ->icon('heroicon-m-user')
+                        ->placeholder('Unassigned'),
+
+                    TextEntry::make('due_date')
+                        ->hiddenLabel()
+                        ->icon('heroicon-m-calendar')
+                        ->date()
+                        ->placeholder(''),
+                ])->from('md'),
+            ]))
+            ->recordActions([
+                Action::make('view')
+                    ->url(fn (Item $record): string => ItemResource::getUrl('view', ['record' => $record])),
+            ])
+            ->cardAction('view');
     }
 
-    /** Called via Alpine drag-drop → Livewire event */
-    #[On('item-moved')]
-    public function moveItem(int $itemId, string $newStatus, int $position): void
-    {
-        $item = Item::find($itemId);
-        $item?->update(['position' => $position]);
+    /**
+     * Drag-and-drop writes the column and position together. `parent::moveCard()`
+     * runs in its own transaction, so wrapping the call keeps the policy check and
+     * the write atomic, and the activity log entry for `status` comes from the
+     * model's own LogsActivity configuration (position is not logged).
+     */
+    public function moveCard(
+        string $cardId,
+        string $targetColumnId,
+        ?string $afterCardId = null,
+        ?string $beforeCardId = null,
+    ): void {
+        $item = Item::query()->findOrFail($cardId);
 
-        // Attach label matching the target column name
-        $label = Label::firstOrCreate(
-            ['name' => $newStatus],
-            ['color' => '#6b7280']
-        );
-        $item?->labels()->syncWithoutDetaching([$label->id]);
+        Gate::authorize('update', $item);
+
+        if (ItemStatus::tryFrom($targetColumnId) === null) {
+            return;
+        }
+
+        DB::transaction(function () use ($cardId, $targetColumnId, $afterCardId, $beforeCardId): void {
+            parent::moveCard($cardId, $targetColumnId, $afterCardId, $beforeCardId);
+        });
     }
 }

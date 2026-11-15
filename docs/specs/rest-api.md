@@ -18,10 +18,10 @@ list/show/store/update routes: the list and a single record are fetched through 
 
 | Resource | URI | Abilities | Specifics |
 |---|---|---|---|
-| Items | `/api/v1/items` | `items:read`, `items:write` | `is_epic`, virtual `type` from `meta.type`, labels attach/detach/sync, 409 on active children, `assign` action |
+| Items | `/api/v1/items` | `items:read`, `items:write` | `is_epic`, native `status`, virtual `type` from `meta.type`, labels attach/detach/sync, 409 on active children, `assign` action |
 | Users | `/api/v1/users` | `users:read`, `users:write` | write-only password, create/update `admin` only, roles are not exposed, no destroy |
 | Labels | `/api/v1/labels` | `labels:read`, `labels:write` | delete clears `item_label` only, `items` relation is read-only |
-| Comments | `/api/v1/comments` | `comments:read`, `comments:write` | author = current user, author/admin rules, perimeter over a live Item |
+| Comments | `/api/v1/comments` | `comments:read`, `comments:write` | author = current user, author/admin rules, perimeter over a live Item, `body` is sanitized HTML |
 
 The shared rules live in `App\Rest\Resources\Resource`: `Contains` search, limits
 `[15,25,50,100]`, `id DESC` ordering, `search.trashed` rejected with 422. Authorization has two
@@ -43,6 +43,10 @@ bearer scheme are added by OpenAPI transformers.
 - **`is_epic` is a separate flag.** The new `items.is_epic` (boolean, default false, index
   `(is_epic, id)`) does not change `type`; the hybrid `type=task + is_epic=true` is a valid
   container task.
+- **`status` is a native column.** `items.status` holds one of `todo|in_progress|review|done`
+  (`App\Enums\ItemStatus`). It is readable, filterable (`=`, `!=`) and writable: creation without a
+  status falls back to `todo`, and any value outside the four is rejected with 422. The Kanban board
+  and the Filament tables read the same column.
 - **The hierarchy changes only through `parent_id`.** The `parent`/`children` relations are
   declared read-only (`onlyOperations()`), so the tree can be written only by changing `parent_id`.
   A cycle (the item itself or a descendant) returns 422 and rolls back the whole mutation.
@@ -52,6 +56,15 @@ bearer scheme are added by OpenAPI transformers.
   every other delete is soft and transactional.
 - **Comment perimeter.** `CommentResource::perimeterQuery()` performs `whereHas('item')`: comments
   of a deleted Item stay in the database but are not visible, mutable or deletable through the API.
+- **Comment fields survive the polymorphic move.** The database stores `commentable_*` and
+  `commenter_*` (relaticle/comments), while the API keeps `item_id` and `user_id` as virtual fields
+  that read and write the polymorphic columns with the Item/User types fixed. Filters on either
+  field add the matching type constraint, so a row of another commentable type can never leak in.
+  The public `item` and `author` includes still work (backed by `morphTo` relations).
+- **`body` is sanitized HTML.** The package's sanitizer runs on every save, so `<script>` and
+  `javascript:` URLs are stripped from both API writes and the comment UI. Legacy Markdown bodies
+  were converted to HTML by the migration; clients that still send Markdown get it stored as plain
+  text, not rendered.
 - **User safety.** `password` is declared `writeOnly`, so it is never returned, filtered or sorted;
   `remember_token`, `email_verified_at` and roles are not declared at all. The unique email rule on
   update ignores the current record via `Contextual::rule()`.

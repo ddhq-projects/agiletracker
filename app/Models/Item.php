@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\ItemStatus;
 use App\Models\Concerns\Favoritable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,15 +12,29 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Relaticle\Comments\Concerns\HasComments;
+use Relaticle\Comments\Contracts\Commentable;
+use Relaticle\Flowforge\Services\DecimalPosition;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
-class Item extends Model
+class Item extends Model implements Commentable
 {
-    use Favoritable, HasFactory, LogsActivity, SoftDeletes;
+    use Favoritable, HasComments, HasFactory, LogsActivity, SoftDeletes;
+
+    /**
+     * A new model carries the default workflow state from the start, so the
+     * first update of any other attribute does not read as a status change.
+     *
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'status' => 'todo',
+    ];
 
     protected $fillable = [
         'title',
+        'status',
         'description',
         'is_epic',
         'meta',
@@ -37,6 +52,7 @@ class Item extends Model
     ];
 
     protected $casts = [
+        'status' => ItemStatus::class,
         'is_epic' => 'boolean',
         'due_date' => 'date',
         'start_date' => 'date',
@@ -45,6 +61,30 @@ class Item extends Model
         'eta_date' => 'date',
         'meta' => 'array',
     ];
+
+    /**
+     * New items land at the bottom of their workflow column. Flowforge only
+     * recalculates positions on a move, so without this a fresh card would sit
+     * unordered until someone dragged it.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (Item $item): void {
+            if ($item->position !== null) {
+                return;
+            }
+
+            $status = $item->status instanceof ItemStatus ? $item->status : ItemStatus::from((string) ($item->status ?? ItemStatus::Todo->value));
+
+            $last = static::withTrashed()
+                ->where('status', $status->value)
+                ->max('position');
+
+            $item->position = $last === null
+                ? DecimalPosition::forEmptyColumn()
+                : DecimalPosition::after((string) $last);
+        });
+    }
 
     // ─── Relationships ────────────────────────────────────────────────────────
 
@@ -88,11 +128,6 @@ class Item extends Model
         return $this->belongsToMany(User::class, 'item_cc');
     }
 
-    public function comments(): HasMany
-    {
-        return $this->hasMany(Comment::class)->latest();
-    }
-
     // ─── Scopes ───────────────────────────────────────────────────────────────
 
     public function scopeRootLevel($query)
@@ -115,7 +150,7 @@ class Item extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['title', 'assignee_id', 'parent_id', 'meta', 'is_epic'])
+            ->logOnly(['title', 'status', 'assignee_id', 'parent_id', 'meta', 'is_epic'])
             ->logOnlyDirty()
             ->dontLogEmptyChanges();
     }

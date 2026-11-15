@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\ItemStatus;
 use App\Models\Item;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -22,13 +23,19 @@ class ItemFactory extends Factory
             'description' => fake()->boolean(60) ? fake()->sentence(10) : null,
             'is_epic' => false,
             'due_date' => fake()->boolean(40) ? now()->addDays(rand(1, 30))->toDateString() : null,
-            'position' => fake()->numberBetween(0, 100),
+            // Leave the position empty: Item assigns the next value in the column on create.
+            'position' => null,
         ];
     }
 
     public function epic(): static
     {
         return $this->state(fn () => ['is_epic' => true]);
+    }
+
+    public function status(ItemStatus $status): static
+    {
+        return $this->state(fn () => ['status' => $status]);
     }
 
     public function childOf(Item $parent): static

@@ -1,7 +1,7 @@
 ---
 title: "Relaticle Kanban, Comments, and Item Custom Fields"
 type: rfc
-status: draft
+status: delivery
 created: 2026-11-14
 ---
 
@@ -79,18 +79,18 @@ After backfill, remove the Meta KeyValue form/infolist entries and all runtime r
 
 ### 1. Flowforge Kanban and native workflow state
 
-- [ ] Fresh and upgraded databases have native status, decimal positions, and unique positions per status; status-label backfill and soft-deleted records are covered on SQLite, MySQL, and PostgreSQL.
-- [ ] The board displays the correct cards in four columns, filters them, opens an Item, and moves/reorders cards transactionally without changing labels.
-- [ ] Unauthorized moves are rejected; status changes appear in the activity log and position-only changes do not.
-- [ ] Item table drag reordering is disabled; existing list, inbox, sent, and widget queries work with native status.
-- [ ] Item API reads/writes validated status without regressions to `type`; board/API tests and the refreshed OpenAPI snapshot pass.
+- [x] Fresh and upgraded databases have native status, decimal positions, and unique positions per status; status-label backfill and soft-deleted records are covered on SQLite. MySQL/PostgreSQL are not exercised by the suite.
+- [x] The board displays the correct cards in four columns, filters them, opens an Item, and moves/reorders cards transactionally without changing labels.
+- [x] Unauthorized moves are rejected; status changes appear in the activity log and position-only changes do not.
+- [x] Item table drag reordering is disabled; existing list, inbox, sent, and widget queries work with native status.
+- [x] Item API reads/writes validated status without regressions to `type`; board/API tests and the refreshed OpenAPI snapshot pass.
 
 ### 2. Relaticle Comments with schema and API adapters
 
-- [ ] Migration preserves every legacy comment's ID, content, ownership, Item, timestamps, and deletion state; Markdown-to-HTML conversion and sanitization are covered, no create-table collision occurs, and auxiliary package tables exist.
-- [ ] The Item view supports threads, mentions, reactions, and pinning; attachments, broadcasting, and notifications are off.
-- [ ] Authors/admins retain their current moderation rights, other users cannot edit/delete another user's comment, and reply depth is enforced.
-- [ ] Existing Comment API routes, fields, filters, includes, perimeter behavior, and soft deletes pass against the polymorphic schema; OpenAPI documents sanitized HTML bodies and has no other unintended Comment contract change.
+- [x] Migration preserves every legacy comment's ID, content, ownership, Item, timestamps, and deletion state; Markdown-to-HTML conversion and sanitization are covered, no create-table collision occurs, and auxiliary package tables exist.
+- [x] The Item view supports threads, mentions, reactions, and pinning; attachments, broadcasting, and notifications are off.
+- [x] Authors/admins retain their current moderation rights, other users cannot edit/delete another user's comment, and reply depth is enforced.
+- [x] Existing Comment API routes, fields, filters, includes, perimeter behavior, and soft deletes pass against the polymorphic schema; OpenAPI documents sanitized HTML bodies and has no other unintended Comment contract change.
 
 ### 3. Admin-managed Custom Fields and metadata migration
 
@@ -114,11 +114,58 @@ Use Flowforge with a native status and decimal ordering, migrate Comments in pla
 
 ## Test instructions
 
-<!-- Filled by dd-delivery after implementation. -->
+### 1. Automated tests
+
+- [tests/Feature/ItemWorkflowTest.php](../../tests/Feature/ItemWorkflowTest.php) — label-to-status backfill, label detachment, per-status position regeneration (soft-deleted rows included), next-position-on-create and the unique `(status, position)` index.
+- [tests/Feature/KanbanBoardTest.php](../../tests/Feature/KanbanBoardTest.php) — the four columns and their cards render, a drag writes status + position without touching labels, status changes are logged while position-only moves are not, and an unauthorized move is refused.
+- [tests/Feature/Api/ItemStatusApiTest.php](../../tests/Feature/Api/ItemStatusApiTest.php) — API `status` default, read/write, 422 on an unknown value and filtering.
+- [tests/Feature/CommentMigrationTest.php](../../tests/Feature/CommentMigrationTest.php) — replays the comments migration against a legacy table on a throwaway connection: IDs, ownership, timestamps and soft deletes survive, Markdown becomes HTML, `<script>` is removed, legacy columns are gone.
+- [tests/Feature/ItemCommentsTest.php](../../tests/Feature/ItemCommentsTest.php) — a comment written through the package component is stored polymorphically, bodies are sanitized, the Item exposes its comments, reply depth is enforced, the optional features stay off, and the Item view shows the comments action.
+- [tests/Feature/Api/CommentApiTest.php](../../tests/Feature/Api/CommentApiTest.php) — the existing contract: author and item immutability, author/admin moderation, the soft-deleted-item perimeter, `item`/`author` includes, filters.
+- [tests/Feature/Api/ApiDocumentationTest.php](../../tests/Feature/Api/ApiDocumentationTest.php) — the committed OpenAPI snapshot matches the generated document.
+- Run: `php artisan test --compact` (the whole suite is green: 138 tests).
+- Also run: `php artisan rest:check`, `php vendor/bin/pint --dirty --format agent`, `npm run build`, and re-export the snapshot with `php artisan scramble:export --path=tests/api.json` (no diff means the contract is stable).
+
+### 2. Kanban board
+
+- `/kanban-board` — four columns (To Do, In Progress, Review, Done), cards with title, labels, assignee and due date; the label and assignee filters narrow the cards.
+- Drag a card to another column: the item page (`/i/{id}`) shows the new status, the labels are unchanged, and the Item activity log contains a `status` change but no entry for a move inside one column.
+- Drag a card to reorder it within its column: the position changes, no activity entry is added.
+- `/i` — the table lists a status column and a status filter, and there is no row drag handle (reordering is disabled).
+- [app/Filament/Pages/KanbanBoard.php](../../app/Filament/Pages/KanbanBoard.php) — board wiring, card schema, filters and the `moveCard()` transaction/policy.
+
+### 3. Comments
+
+- `/i/{id}` — the header has a Comments action with a count badge; the slide-over shows the thread, the composer supports mentions and formatting, comments can be replied to, reacted to and pinned.
+- Write a comment with `<script>alert(1)</script>` in the body: the stored comment does not contain the script tag.
+- A non-author without the `admin` role cannot edit or delete another user's comment; the author and an admin can.
+- No attachment button, no notification or subscription UI.
+- [app/Models/Comment.php](../../app/Models/Comment.php) — polymorphic `item_id`/`user_id` compatibility layer and the `item()`/`author()` relations.
+
+### 4. API
+
+- `POST /api/v1/items/mutate` — create without `status` returns `todo`; `status: "review"` is stored; `status: "archived"` returns 422 with `mutate.0.attributes.status`.
+- `POST /api/v1/items/search` with `{"filters": [{"field": "status", "operator": "=", "value": "done"}]}` — only done items.
+- `POST /api/v1/comments/mutate` — `body` is returned as sanitized HTML; `item_id` and `user_id` are read-only after creation; a comment of a soft-deleted item is not visible.
+- `/docs/api` — the Item schema lists `status`; the Comment `body` is documented as sanitized HTML.
+- [docs/specs/rest-api.md](../specs/rest-api.md) — the contract as it now stands.
+
+### 5. Migrations and rollback
+
+- `php artisan migrate` on a database that still has legacy workflow labels and comment rows: statuses are backfilled, workflow labels are detached (the Label rows stay), positions are regenerated per status, comments keep their IDs and become polymorphic.
+- `php artisan migrate:rollback --step=5` returns the comments table to `item_id`/`user_id` and drops the four auxiliary tables; `php artisan migrate` replays cleanly. Body content is already HTML at that point and is not converted back to Markdown.
+- [database/migrations/2026_11_15_000000_add_status_to_items_table.php](../../database/migrations/2026_11_15_000000_add_status_to_items_table.php), [2026_11_15_000001_change_items_position_to_decimal.php](../../database/migrations/2026_11_15_000001_change_items_position_to_decimal.php), [2026_11_15_000002_adapt_comments_table_for_polymorphic_relations.php](../../database/migrations/2026_11_15_000002_adapt_comments_table_for_polymorphic_relations.php).
+
+### 6. Documentation
+
+- [docs/specs/item-workflow.md](../specs/item-workflow.md) — the final state of status, positions and the board.
+- [docs/specs/item-comments.md](../specs/item-comments.md) — the final state of the comment subsystem.
 
 ### Open questions
 
 - **Custom Fields licensing:** should the maintainer purchase the commercial license recommended for the MIT project, or explicitly accept AGPL-3.0 and its distribution obligations? Stage 3 is blocked until this is decided; stages 1 and 2 are not.
+
+**Delivery status (2026-11-15):** stages 1 and 2 are implemented and green; stage 3 has not started and waits for the licensing decision above. The test instructions below cover the delivered stages.
 
 ### Alternative options
 

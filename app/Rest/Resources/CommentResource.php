@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Rest\Resources;
 
 use App\Models\Comment;
+use App\Models\Item;
+use App\Models\User;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\Rule;
@@ -17,6 +19,10 @@ use Lomkit\Rest\Http\Routing\Endpoint;
 use Lomkit\Rest\Mutations\MutationNode;
 use Lomkit\Rest\Relations\BelongsTo;
 
+/**
+ * The public contract stays `item_id` / `user_id` even though the package
+ * stores the rows through polymorphic columns.
+ */
 class CommentResource extends Resource
 {
     public static string $model = Comment::class;
@@ -38,14 +44,34 @@ class CommentResource extends Resource
         return [
             ID::make('id'),
             Text::make('body')
+                ->label('Sanitized HTML comment body')
                 ->searchable()
                 ->creationRules('required')
-                ->examples('Confirm the scope of the first release'),
+                ->examples('<p>Confirm the scope of the first release</p>'),
             Integer::make('item_id')
+                ->virtual()
                 ->updatable(false)
+                ->requires(['commentable_type', 'commentable_id'])
+                ->resolveUsing(fn (Comment $comment): ?int => $comment->item_id)
+                ->fillUsing(function (Comment $comment, mixed $value): void {
+                    $comment->item_id = (int) $value;
+                })
+                ->filterable(['=', '!='])
+                ->filterUsing(fn (Builder $query, string $operator, mixed $value): Builder => $query
+                    ->where('commentable_type', (new Item)->getMorphClass())
+                    ->where('commentable_id', $operator, $value))
                 ->rules(Rule::exists('items', 'id')->whereNull('deleted_at'))
                 ->creationRules('required'),
-            Integer::make('user_id')->nullable()->readonly(),
+            Integer::make('user_id')
+                ->virtual()
+                ->nullable()
+                ->readonly()
+                ->requires(['commenter_type', 'commenter_id'])
+                ->resolveUsing(fn (Comment $comment): ?int => $comment->user_id)
+                ->filterable(['=', '!='])
+                ->filterUsing(fn (Builder $query, string $operator, mixed $value): Builder => $query
+                    ->where('commenter_type', (new User)->getMorphClass())
+                    ->where('commenter_id', $operator, $value)),
             DateTime::make('created_at')->readonly(),
             DateTime::make('updated_at')->readonly(),
         ];
@@ -64,7 +90,9 @@ class CommentResource extends Resource
      */
     public function perimeterQuery(Builder $query): Builder
     {
-        return $query->whereHas('item');
+        return $query
+            ->where('commentable_type', (new Item)->getMorphClass())
+            ->whereHas('item');
     }
 
     public function mutating(MutationNode $entry, Model $model): void
