@@ -18,9 +18,14 @@ use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Infolists;
 use Filament\Notifications\Notification;
+use Filament\Pages\BasePage;
 use Filament\Resources\Resource;
+use Filament\Schemas\Components\Actions;
+use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Group;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Alignment;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
@@ -74,99 +79,121 @@ class ItemResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->schema([
-            Section::make('General')
-                ->columnSpanFull()
-                ->columns(2)
-                ->schema([
-                    Forms\Components\TextInput::make('title')
-                        ->required()
-                        ->maxLength(255)
-                        ->columnSpanFull(),
-
-                    static::descriptionEditor(),
-
-                    Forms\Components\Select::make('parent_id')
-                        ->label('Parent')
-                        ->relationship('parent', 'title')
-                        ->searchable()
-                        ->nullable(),
-
-                    Forms\Components\Select::make('status')
-                        ->options(ItemStatus::class)
-                        ->default(ItemStatus::Todo)
-                        ->required(),
-
-                    Forms\Components\Select::make('labels')
-                        ->label('Labels')
-                        ->relationship('labels', 'name')
-                        ->multiple()
-                        ->preload()
-                        ->createOptionForm([
-                            Forms\Components\TextInput::make('name')->required(),
-                            Forms\Components\ColorPicker::make('color')->default('#6b7280'),
-                        ])
-                        ->columnSpan(1),
-                ]),
-
-            Section::make('Participants')
-                ->columns(2)
-                ->schema([
-                    Forms\Components\Select::make('assignee_id')
-                        ->label('Responsible')
-                        ->relationship('assignee', 'name')
-                        ->searchable()
-                        ->preload()
-                        ->nullable(),
-
-                    Forms\Components\Select::make('reporter_id')
-                        ->label('From')
-                        ->relationship('reporter', 'name')
-                        ->searchable()
-                        ->preload()
-                        ->default(fn () => auth()->id())
-                        ->disabled()
-                        ->dehydrated(),
-
-                    Forms\Components\Select::make('to')
-                        ->label('To')
-                        ->relationship('to', 'name')
-                        ->multiple()
-                        ->searchable()
-                        ->preload()
-                        ->columnSpanFull(),
-
-                    Forms\Components\Select::make('cc')
-                        ->label('CC')
-                        ->relationship('cc', 'name')
-                        ->multiple()
-                        ->searchable()
-                        ->preload()
-                        ->columnSpanFull(),
-                ]),
-
-            Section::make('Dates')
-                ->columns(3)
-                ->schema([
-                    Forms\Components\DatePicker::make('start_date')->nullable(),
-                    Forms\Components\DatePicker::make('end_date')->nullable(),
-                    Forms\Components\DatePicker::make('due_date')->nullable(),
-
-                    Forms\Components\DatePicker::make('etd_date')
-                        ->label('ETD')
-                        ->nullable(),
-                    Forms\Components\DatePicker::make('eta_date')
-                        ->label('ETA')
-                        ->nullable(),
-                ]),
-
-            Section::make('Meta')
+            Grid::make(['default' => 1, 'lg' => 3])
                 ->columnSpanFull()
                 ->schema([
-                    Forms\Components\KeyValue::make('meta')
-                        ->label('Meta'),
-                ]),
+                    Group::make([
+                        Section::make('General')
+                            ->schema([
+                                Forms\Components\TextInput::make('title')
+                                    ->required()
+                                    ->maxLength(255),
 
+                                static::descriptionEditor(),
+                            ]),
+
+                        Section::make('Dates')
+                            ->columns(3)
+                            ->schema([
+                                Forms\Components\DatePicker::make('due_date')->nullable(),
+                                Forms\Components\DatePicker::make('start_date')->nullable(),
+                                Forms\Components\DatePicker::make('end_date')->nullable(),
+
+                                Forms\Components\DatePicker::make('etd_date')
+                                    ->label('ETD')
+                                    ->nullable(),
+                                Forms\Components\DatePicker::make('eta_date')
+                                    ->label('ETA')
+                                    ->nullable(),
+                            ]),
+
+                        Section::make('Meta')
+                            ->collapsible()
+                            ->collapsed()
+                            ->schema([
+                                Forms\Components\KeyValue::make('meta')
+                                    ->label('Meta'),
+                            ]),
+                    ])
+                        ->columnSpan(['default' => 1, 'lg' => 2])
+                        ->extraAttributes(['class' => 'min-w-0']),
+
+                    Group::make([
+                        static::formActions(),
+
+                        Section::make('Workflow')
+                            ->schema([
+                                Forms\Components\Select::make('status')
+                                    ->options(ItemStatus::class)
+                                    ->default(ItemStatus::Todo)
+                                    ->required(),
+
+                                Forms\Components\Select::make('labels')
+                                    ->label('Labels')
+                                    ->relationship('labels', 'name')
+                                    ->multiple()
+                                    ->preload()
+                                    ->createOptionForm([
+                                        Forms\Components\TextInput::make('name')->required(),
+                                        Forms\Components\ColorPicker::make('color')->default('#6b7280'),
+                                    ]),
+
+                                Forms\Components\Select::make('parent_id')
+                                    ->label('Parent')
+                                    ->relationship('parent', 'title')
+                                    ->searchable()
+                                    ->nullable(),
+                            ]),
+
+                        Section::make('Participants')
+                            ->schema([
+                                Forms\Components\Select::make('assignee_id')
+                                    ->label('Responsible')
+                                    ->relationship('assignee', 'name')
+                                    ->searchable()
+                                    ->preload()
+                                    ->nullable(),
+
+                                Forms\Components\Select::make('reporter_id')
+                                    ->label('From')
+                                    ->relationship('reporter', 'name')
+                                    ->searchable()
+                                    ->preload()
+                                    ->default(fn () => auth()->id())
+                                    ->disabled()
+                                    ->dehydrated(),
+
+                                Forms\Components\Select::make('to')
+                                    ->label('To')
+                                    ->relationship('to', 'name')
+                                    ->multiple()
+                                    ->searchable()
+                                    ->preload(),
+
+                                Forms\Components\Select::make('cc')
+                                    ->label('CC')
+                                    ->relationship('cc', 'name')
+                                    ->multiple()
+                                    ->searchable()
+                                    ->preload(),
+                            ]),
+                    ])
+                        ->columnSpan(['default' => 1, 'lg' => 1]),
+                ]),
         ]);
+    }
+
+    /**
+     * The page owns the actions (save, save and view, create another, cancel);
+     * the layout only decides that they sit above the reference fields instead
+     * of in a footer below the whole form.
+     */
+    protected static function formActions(): Actions
+    {
+        return Actions::make(fn (BasePage $livewire): array => method_exists($livewire, 'getRailFormActions')
+            ? $livewire->getRailFormActions()
+            : [])
+            ->alignment(Alignment::Start);
     }
 
     // ─── Infolist ─────────────────────────────────────────────────────────────

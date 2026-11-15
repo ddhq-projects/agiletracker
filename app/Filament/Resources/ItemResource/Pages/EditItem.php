@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace App\Filament\Resources\ItemResource\Pages;
 
 use App\Filament\Resources\ItemResource;
+use App\Filament\Resources\ItemResource\Pages\Concerns\KeepsFormActionsInSchema;
 use Filament\Actions;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\EditRecord;
 
 class EditItem extends EditRecord
 {
+    use KeepsFormActionsInSchema;
+
     protected static string $resource = ItemResource::class;
 
     protected function getHeaderActions(): array
