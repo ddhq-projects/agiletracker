@@ -3,27 +3,29 @@
 ## MVP
 
 - [ ] new repo [https://github.com/ddhq-projects/agiletracker/pull/1](https://github.com/ddhq-projects/agiletracker/pull/1)
+- [ ] integrate favorites to schemas 
+  - [ ] here [http://agiletracker.localhost/i/8](http://agiletracker.localhost/i/8) - set as fav or remove
+  - [ ] here [http://agiletracker.localhost/i](http://agiletracker.localhost/i) 
+  - [ ] here [http://agiletracker.localhost/inbox](http://agiletracker.localhost/inbox) 
+  - [ ] here [http://agiletracker.localhost/sent](http://agiletracker.localhost/sent) 
+- [ ] add groups
+  - [ ] with types: project, team, department etc
+  - [ ] groups access to issues - restrict
+  - [ ] research how to do in Jira and Planfix - make both options
 - [x] move the settings to a separate panel [http://agiletracker.localhost/settings](http://agiletracker.localhost/settings)
 
-
-
 - [ ] Alfa 3
-  - [ ] sidebar - collapsed
-  - [ ] 
+  - [x] sidebar - collapsed
+  - [ ] Roles & permissions (admin, manager, user) via Spatie & Passport
   - [ ] add [https://github.com/relaticle/activity-log](https://github.com/relaticle/activity-log)
+    - [ ] и добавить раздел в настройки [http://agiletracker.localhost/settings](http://agiletracker.localhost/settings)  - для админов
 
 - [ ] beta 1
   - add master setup - like wordpress - if no data - setup first admin user for first auto login
   - merge migrations (one per model + one for settings)
   - [x] Boards (drag & drop, per-board columns, items on many boards; replaces the single Kanban page)
-  - [ ] Roles & permissions (admin, manager, user) via Spatie
-  - [ ] Sub issues (parent_id in Item)
-- [ ] sidebar - collapsed
-- [ ] тут [http://agiletracker.localhost/favorite](http://agiletracker.localhost/favorite) rename to favorites
-  - [ ] mv to group Collections
-  - [ ] in Dashboard this should be at the top and look like cards - buttons - each one a click-through to the right link
-  - [ ] the cards should be sortable
-  - [ ] топ 5 позиций - если избранные - должны показываться в спец группе - избранное - в самом верху сайдбара
+
+- [x] Sub issues (parent_id in Item)
 
 ## Upcoming
 
@@ -43,8 +45,8 @@
 
 - [ ] Notifications (due date reminders, assignment alerts)
 - [ ] Search & filters (by status, priority, labels)
-- [ ] API (Laravel Sanctum + API Resources)
-- [ ] Tests (Unit + Feature, critical path coverage)
+
+
 
 ## Plugins
 
