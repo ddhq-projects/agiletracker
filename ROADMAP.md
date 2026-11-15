@@ -3,6 +3,7 @@
 ## MVP
 
 - [ ] new repo [https://github.com/ddhq-projects/agiletracker/pull/1](https://github.com/ddhq-projects/agiletracker/pull/1)
+- [ ] move the settings to a separate panel [http://agiletracker.localhost/manage-settings](http://agiletracker.localhost/manage-settings)
 - [ ] Alfa 3
   - [ ] add for kanban and issues/items [https://github.com/relaticle/flowforge](https://github.com/relaticle/flowforge)
   - [ ] add for comments for issues/items [https://github.com/relaticle/comments](https://github.com/relaticle/comments)
@@ -10,7 +11,7 @@
   - [ ] add [https://github.com/relaticle/activity-log](https://github.com/relaticle/activity-log)
   - [ ] go [https://github.com/anatolii-iumashev/agiletracker/pull/6](https://github.com/anatolii-iumashev/agiletracker/pull/6)
     - sidebar - collapsed
-      - save files - on local and S3
+      - save files - on local and S3 ([Bunny.net S3 example and tutorial](docs/wiki/bunny-s3-storage.md))
 
 - [ ] beta 1
   - add master setup - like wordpress - if no data - setup first admin user for first auto login

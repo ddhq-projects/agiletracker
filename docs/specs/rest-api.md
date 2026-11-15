@@ -7,6 +7,9 @@ rfc: ../rfc/archive/2026-11-11-rest-api-search.md
 
 # Spec: REST API v1 on Lomkit and Scramble
 
+Package version pin, declaration patterns and client examples:
+[lomkit-rest-api.md](lomkit-rest-api.md).
+
 ## What was done
 
 The public REST API v1 lives under `/api/v1` and is protected by Sanctum tokens. Four Lomkit

@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\ItemResource\Pages;
 
+use App\Actions\AddItemsToBoard;
 use App\Filament\Resources\ItemResource;
 use App\Filament\Resources\ItemResource\RelationManagers\ChildrenRelationManager;
+use App\Models\Board;
 use Filament\Actions;
+use Filament\Forms;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Schemas\Components\EmbeddedSchema;
 use Filament\Schemas\Components\Flex;
@@ -30,6 +34,38 @@ class ViewItem extends ViewRecord
     {
         return [
             Actions\EditAction::make(),
+
+            Actions\Action::make('addToBoard')
+                ->label('Add to board')
+                ->icon('heroicon-o-view-columns')
+                ->schema([
+                    Forms\Components\Select::make('board_ids')
+                        ->label('Boards')
+                        ->options(fn (): array => Board::query()->orderBy('name')->pluck('name', 'id')->all())
+                        ->multiple()
+                        ->required(),
+                ])
+                ->action(function (array $data): void {
+                    $item = $this->getRecord();
+                    $added = 0;
+                    $skipped = 0;
+
+                    foreach (Board::query()->whereKey($data['board_ids'])->get() as $board) {
+                        if ($board->columns()->doesntExist()) {
+                            continue;
+                        }
+
+                        $result = app(AddItemsToBoard)($board, [$item->getKey()]);
+                        $added += $result['added'];
+                        $skipped += $result['skipped'];
+                    }
+
+                    Notification::make()
+                        ->success()
+                        ->title($added > 0 ? 'Added to the board' : 'Already on the board')
+                        ->body($added.' added, '.$skipped.' already on a board')
+                        ->send();
+                }),
         ];
     }
 

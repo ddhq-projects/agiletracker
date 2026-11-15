@@ -104,9 +104,9 @@ return [
     ],
 
     'attachments' => [
-        'enabled' => false,
-        'disk' => 'public',
-        'max_size' => 10240,
+        'enabled' => (bool) env('COMMENTS_ATTACHMENTS_ENABLED', true),
+        'disk' => env('ATTACHMENTS_DISK', 'public'),
+        'max_size' => (int) env('ATTACHMENTS_MAX_SIZE', 10240),
         'allowed_types' => [
             'image/jpeg',
             'image/png',

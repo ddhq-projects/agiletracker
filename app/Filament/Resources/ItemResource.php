@@ -2,17 +2,21 @@
 
 namespace App\Filament\Resources;
 
+use App\Actions\AddItemsToBoard;
 use App\Enums\ItemStatus;
 use App\Filament\Resources\ItemResource\Pages;
 use App\Filament\Resources\ItemResource\RelationManagers;
+use App\Models\Board;
 use App\Models\Item;
 use App\Models\User;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms;
 use Filament\Infolists;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -61,10 +65,14 @@ class ItemResource extends Resource
 
                     Forms\Components\MarkdownEditor::make('description')
                         ->columnSpanFull()
+                        ->fileAttachmentsDisk(config('attachments.disk'))
+                        ->fileAttachmentsDirectory(config('attachments.directory').'/items')
+                        ->fileAttachmentsAcceptedFileTypes(config('attachments.allowed_types'))
+                        ->fileAttachmentsMaxSize(config('attachments.max_size'))
                         ->toolbarButtons([
                             'bold', 'italic', 'strike',
                             'codeBlock', 'bulletList', 'orderedList',
-                            'link', 'table',
+                            'link', 'table', 'attachFiles',
                         ]),
 
                     Forms\Components\Select::make('parent_id')
@@ -188,6 +196,14 @@ class ItemResource extends Resource
                             ->placeholder('No labels'),
                     ]),
 
+                Section::make('Boards')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('boards.name')
+                            ->hiddenLabel()
+                            ->badge()
+                            ->placeholder('Not on any board'),
+                    ]),
+
                 Section::make('Dates')
                     ->schema([
                         Infolists\Components\TextEntry::make('due_date')
@@ -273,6 +289,11 @@ class ItemResource extends Resource
                     ->badge()
                     ->color(fn ($record) => $record->labels->first()?->color ?? 'gray'),
 
+                Tables\Columns\TextColumn::make('boards_count')
+                    ->counts('boards')
+                    ->label('Boards')
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\TextColumn::make('reporter.name')
                     ->label('From')
                     ->sortable(),
@@ -327,6 +348,37 @@ class ItemResource extends Resource
             ])
             ->actions([
                 EditAction::make(),
+
+                Action::make('addToBoard')
+                    ->label('Add to board')
+                    ->icon('heroicon-o-view-columns')
+                    ->schema([
+                        Forms\Components\Select::make('board_ids')
+                            ->label('Boards')
+                            ->options(fn (): array => Board::query()->orderBy('name')->pluck('name', 'id')->all())
+                            ->multiple()
+                            ->required(),
+                    ])
+                    ->action(function (Item $record, array $data): void {
+                        $added = 0;
+                        $skipped = 0;
+
+                        foreach (Board::query()->whereKey($data['board_ids'])->get() as $board) {
+                            if ($board->columns()->doesntExist()) {
+                                continue;
+                            }
+
+                            $result = app(AddItemsToBoard)($board, [$record->getKey()]);
+                            $added += $result['added'];
+                            $skipped += $result['skipped'];
+                        }
+
+                        Notification::make()
+                            ->success()
+                            ->title($added > 0 ? 'Added to the board' : 'Already on the board')
+                            ->body($added.' added, '.$skipped.' already on a board')
+                            ->send();
+                    }),
             ])
             ->bulkActions([
                 BulkAction::make('assign')
@@ -339,6 +391,33 @@ class ItemResource extends Resource
                     ])
                     ->action(fn ($records, array $data) => $records->each->update(['assignee_id' => $data['assignee_id']])
                     ),
+
+                BulkAction::make('addToBoard')
+                    ->label('Add to board')
+                    ->icon('heroicon-o-view-columns')
+                    ->schema([
+                        Forms\Components\Select::make('board_ids')
+                            ->label('Boards')
+                            ->options(fn (): array => Board::query()->orderBy('name')->pluck('name', 'id')->all())
+                            ->multiple()
+                            ->required(),
+                    ])
+                    ->action(function ($records, array $data): void {
+                        $itemIds = $records->modelKeys();
+
+                        foreach (Board::query()->whereKey($data['board_ids'])->get() as $board) {
+                            if ($board->columns()->doesntExist()) {
+                                continue;
+                            }
+
+                            app(AddItemsToBoard)($board, $itemIds);
+                        }
+
+                        Notification::make()
+                            ->success()
+                            ->title('Added to the board')
+                            ->send();
+                    }),
 
                 DeleteBulkAction::make(),
             ])

@@ -13,6 +13,7 @@
         "laravel/framework": "^13.30",
         "laravel/sanctum": "^4.4",
         "laravel/tinker": "^3.0",
+        "league/flysystem-aws-s3-v3": "^3.0",
         "lomkit/laravel-rest-api": "^3.0",
         "relaticle/comments": "^1.0",
         "relaticle/flowforge": "^4.0",

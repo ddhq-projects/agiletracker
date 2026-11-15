@@ -118,6 +118,18 @@ class Item extends Model implements Commentable
         return $this->belongsToMany(Label::class, 'item_label');
     }
 
+    public function boards(): BelongsToMany
+    {
+        return $this->belongsToMany(Board::class, 'board_items')
+            ->withPivot(['board_column_id', 'position'])
+            ->withTimestamps();
+    }
+
+    public function boardItems(): HasMany
+    {
+        return $this->hasMany(BoardItem::class);
+    }
+
     public function to(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'item_to');

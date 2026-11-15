@@ -60,6 +60,27 @@ return [
             'report' => false,
         ],
 
+        /*
+         * Bunny Storage through its S3-compatible API. The bucket and the
+         * access key ID are both the Storage Zone name, and the secret is the
+         * Storage Zone password — never the account API key in BUNNY_API_KEY.
+         * Without BUNNY_CDN_URL the disk still stores files but cannot produce
+         * public URLs, which the editors and comment attachments need.
+         */
+        'bunny' => [
+            'driver' => 's3',
+            'key' => env('BUNNY_STORAGE_ZONE'),
+            'secret' => env('BUNNY_STORAGE_PASSWORD'),
+            'region' => env('BUNNY_STORAGE_REGION', 'de'),
+            'bucket' => env('BUNNY_STORAGE_ZONE'),
+            'url' => env('BUNNY_CDN_URL'),
+            'endpoint' => env('BUNNY_STORAGE_ENDPOINT'),
+            'use_path_style_endpoint' => true,
+            'visibility' => 'public',
+            'throw' => false,
+            'report' => false,
+        ],
+
     ],
 
     /*
