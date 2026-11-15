@@ -8,6 +8,7 @@ use App\Filament\Resources\ItemResource\Pages;
 use App\Filament\Resources\ItemResource\RelationManagers;
 use App\Models\Board;
 use App\Models\Item;
+use App\Models\Label;
 use App\Models\User;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -278,6 +279,58 @@ class ItemResource extends Resource
     }
 
     // ─── Table ────────────────────────────────────────────────────────────────
+
+    /**
+     * The fast lane: the few fields people touch while triaging, in one modal,
+     * without leaving the list they found the item on.
+     */
+    public static function quickChangeAction(): Action
+    {
+        return Action::make('quickChange')
+            ->label('Quick change')
+            ->icon('heroicon-o-bolt')
+            ->fillForm(fn (Item $record): array => [
+                'status' => $record->status,
+                'assignee_id' => $record->assignee_id,
+                'labels' => $record->labels()->pluck('labels.id')->all(),
+                'due_date' => $record->due_date,
+            ])
+            ->schema([
+                Forms\Components\Select::make('status')
+                    ->options(ItemStatus::class)
+                    ->required(),
+
+                Forms\Components\Select::make('assignee_id')
+                    ->label('Assignee')
+                    ->options(fn (): array => User::query()->orderBy('name')->pluck('name', 'id')->all())
+                    ->searchable()
+                    ->nullable(),
+
+                Forms\Components\Select::make('labels')
+                    ->label('Labels')
+                    ->options(fn (): array => Label::query()->orderBy('name')->pluck('name', 'id')->all())
+                    ->multiple()
+                    ->searchable()
+                    ->preload(),
+
+                Forms\Components\DatePicker::make('due_date')
+                    ->nullable(),
+            ])
+            ->action(function (Item $record, array $data): void {
+                $record->update([
+                    'status' => $data['status'],
+                    'assignee_id' => $data['assignee_id'] ?? null,
+                    'due_date' => $data['due_date'] ?? null,
+                ]);
+
+                $record->labels()->sync($data['labels'] ?? []);
+
+                Notification::make()
+                    ->success()
+                    ->title('Item updated')
+                    ->send();
+            });
+    }
 
     public static function table(Table $table): Table
     {
