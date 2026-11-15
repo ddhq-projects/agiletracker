@@ -101,7 +101,6 @@ class DemoDataSeeder extends Seeder
                 'favoritable_id' => $item->id,
             ], [
                 'name' => $item->title,
-                'url' => '/i/'.$item->id,
             ]);
         }
     }

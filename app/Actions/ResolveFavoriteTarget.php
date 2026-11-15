@@ -21,14 +21,25 @@ final class ResolveFavoriteTarget
     {
         $user ??= auth()->user();
 
+        // A favorite of the "internal object" kind may still carry a legacy
+        // `url` pointing at the same record, so the object wins when it is set.
+        if ($favorite->favoritable_type !== null && $user instanceof User) {
+            $target = $this->resolveFavoritable($favorite, $user);
+
+            if ($target->isAvailable()) {
+                return $target;
+            }
+        }
+
         if ($favorite->url !== null) {
             return $this->resolveExternalUrl($favorite->url);
         }
 
-        if (! $user instanceof User) {
-            return FavoriteTarget::unavailable();
-        }
+        return FavoriteTarget::unavailable();
+    }
 
+    private function resolveFavoritable(Favorite $favorite, User $user): FavoriteTarget
+    {
         $favoritable = $favorite->favoritable;
 
         if ($favoritable === null) {

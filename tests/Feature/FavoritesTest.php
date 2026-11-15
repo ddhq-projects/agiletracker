@@ -3,7 +3,10 @@
 declare(strict_types=1);
 
 use App\Actions\FavoriteOrderService;
+use App\Actions\ResolveFavoriteTarget;
 use App\Filament\Pages\Favorites;
+use App\Filament\Resources\ItemResource;
+use App\Filament\Widgets\FavoritesWidget;
 use App\Models\Favorite;
 use App\Models\Item;
 use App\Models\User;
@@ -88,6 +91,42 @@ test('the full page lists favorites in the stored order, not the creation order'
 
     Livewire::test(Favorites::class)
         ->assertCanSeeTableRecords([$third, $first, $second], inOrder: true);
+});
+
+test('dragging is only available on the complete list in the stored order', function () {
+    $user = auth()->user();
+
+    favoriteFor($user, ['name' => 'Alpha', 'url' => 'https://alpha.test']);
+    favoriteFor($user, ['name' => 'Beta', 'url' => 'https://beta.test']);
+
+    $component = Livewire::test(Favorites::class);
+
+    expect($component->instance()->getTable()->isReorderable())->toBeTrue();
+
+    $component->searchTable('Alpha');
+
+    expect($component->instance()->getTable()->isReorderable())->toBeFalse();
+});
+
+test('the same favorite resolves to the same destination on the page, the dashboard and the sidebar', function () {
+    $user = auth()->user();
+
+    $item = Item::factory()->create(['title' => 'Shared target']);
+    $favorite = favoriteFor($user, [
+        'name' => 'Shared favorite',
+        'favoritable_type' => Item::class,
+        'favoritable_id' => $item->id,
+    ]);
+
+    $expected = ItemResource::getUrl('view', ['record' => $item]);
+
+    Livewire::test(Favorites::class)->assertSeeHtml('href="'.$expected.'"');
+    Livewire::test(FavoritesWidget::class)->assertSeeHtml('href="'.$expected.'"');
+
+    $sidebarItem = collect(Favorites::getNavigationItems())
+        ->first(fn ($navItem): bool => $navItem->getKey() === 'favorite-'.$favorite->id);
+
+    expect($sidebarItem->getUrl())->toBe($expected);
 });
 
 test('dragging rows on the full page persists a normalized order', function () {
@@ -209,12 +248,47 @@ test('editing rejects a priority above the number of favorites', function () {
     $favorite = favoriteFor($user, ['name' => 'Alpha', 'url' => 'https://alpha.test']);
     favoriteFor($user, ['name' => 'Beta', 'url' => 'https://beta.test']);
 
+    foreach ([0, 3, 'not a number'] as $priority) {
+        Livewire::test(Favorites::class)
+            ->callAction(TestAction::make('edit')->table($favorite), [
+                'name' => 'Alpha',
+                'priority' => $priority,
+            ])
+            ->assertHasFormErrors(['priority']);
+    }
+});
+
+test('adding and deleting a favorite refreshes the sidebar', function () {
+    $user = auth()->user();
+
     Livewire::test(Favorites::class)
-        ->callAction(TestAction::make('edit')->table($favorite), [
-            'name' => 'Alpha',
-            'priority' => 3,
+        ->callAction('addFavorite', [
+            'kind' => 'link',
+            'name' => 'Docs',
+            'url' => 'https://docs.test',
         ])
-        ->assertHasFormErrors(['priority']);
+        ->assertDispatched('refresh-sidebar');
+
+    $favorite = Favorite::query()->where('user_id', $user->id)->firstOrFail();
+
+    Livewire::test(Favorites::class)
+        ->callAction(TestAction::make('delete')->table($favorite))
+        ->assertDispatched('refresh-sidebar');
+});
+
+test('a legacy favorite that carries both a url and an object resolves to the object', function () {
+    $user = auth()->user();
+
+    $item = Item::factory()->create(['title' => 'Legacy target']);
+    $favorite = favoriteFor($user, [
+        'name' => 'Legacy bookmark',
+        'url' => '/i/'.$item->id,
+        'favoritable_type' => Item::class,
+        'favoritable_id' => $item->id,
+    ]);
+
+    expect(app(ResolveFavoriteTarget::class)($favorite, $user)->url)
+        ->toBe(ItemResource::getUrl('view', ['record' => $item]));
 });
 
 test('an unavailable target stays visible and manageable on the full page without a link', function () {

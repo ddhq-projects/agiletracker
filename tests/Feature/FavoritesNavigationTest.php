@@ -6,6 +6,7 @@ use App\Actions\FavoriteOrderService;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\Favorites;
 use App\Filament\Pages\UserProfile;
+use App\Filament\Resources\ItemResource;
 use App\Filament\Widgets\FavoritesWidget;
 use App\Filament\Widgets\InboxWidget;
 use App\Filament\Widgets\SentWidget;
@@ -198,6 +199,26 @@ test('a deleted item and an unsupported object type are hidden from the quick vi
         ->assertSee('No favorites yet');
 });
 
+test('external links open in a new tab with a safe rel and internal ones stay in the same tab', function () {
+    $user = actingAsUser();
+
+    addFavoriteFor($user, ['name' => 'Docs', 'url' => 'https://docs.test']);
+
+    $item = Item::factory()->create(['title' => 'Internal target']);
+    addFavoriteFor($user, [
+        'name' => 'Internal bookmark',
+        'favoritable_type' => Item::class,
+        'favoritable_id' => $item->id,
+    ]);
+
+    $this->get('/')->assertSee('rel="noopener noreferrer"', false);
+
+    Livewire::test(FavoritesWidget::class)
+        ->assertSeeHtml('target="_blank"')
+        ->assertSeeHtml('rel="noopener noreferrer"')
+        ->assertSeeHtml('href="'.ItemResource::getUrl('view', ['record' => $item]).'"');
+});
+
 test('the dashboard shows favorites as its first widget without the old three card limit', function () {
     $user = actingAsUser();
 
@@ -205,13 +226,87 @@ test('the dashboard shows favorites as its first widget without the old three ca
         addFavoriteFor($user, ['name' => $name, 'url' => 'https://'.strtolower($name).'.test']);
     }
 
+    addFavoriteFor(User::factory()->create(), ['name' => 'Someone else', 'url' => 'https://else.test']);
+
     expect(app(Dashboard::class)->getWidgets())
         ->toBe([FavoritesWidget::class, InboxWidget::class, SentWidget::class]);
 
     Livewire::test(FavoritesWidget::class)
         ->assertSee('One')
         ->assertSee('Four')
-        ->assertSee('View all');
+        ->assertDontSee('Someone else')
+        ->assertSee('View all')
+        ->assertSeeHtml('href="'.Favorites::getUrl().'"');
+});
+
+test('the dashboard grid shows at most twelve favorites in order', function () {
+    $user = actingAsUser();
+
+    for ($index = 1; $index <= 14; $index++) {
+        addFavoriteFor($user, [
+            'name' => 'Card '.str_pad((string) $index, 2, '0', STR_PAD_LEFT),
+            'url' => 'https://card'.$index.'.test',
+        ]);
+    }
+
+    $labels = [];
+
+    for ($index = 1; $index <= 12; $index++) {
+        $labels[] = 'Card '.str_pad((string) $index, 2, '0', STR_PAD_LEFT);
+    }
+
+    Livewire::test(FavoritesWidget::class)
+        ->assertSeeInOrder($labels)
+        ->assertDontSee('Card 13')
+        ->assertDontSee('Card 14')
+        ->assertSee('Show all favorites');
+});
+
+test('the empty favorites widget links to the page instead of showing a card', function () {
+    actingAsUser();
+
+    Livewire::test(FavoritesWidget::class)
+        ->assertSee('No favorites yet')
+        ->assertSeeHtml('href="'.Favorites::getUrl().'"');
+});
+
+test('the order changed on the dashboard is the same on the page and in the sidebar', function () {
+    $user = actingAsUser();
+
+    $one = addFavoriteFor($user, ['name' => 'One', 'url' => 'https://one.test']);
+    $two = addFavoriteFor($user, ['name' => 'Two', 'url' => 'https://two.test']);
+    $three = addFavoriteFor($user, ['name' => 'Three', 'url' => 'https://three.test']);
+
+    Livewire::test(FavoritesWidget::class)
+        ->call('reorderFavorites', [$three->id, $two->id, $one->id]);
+
+    $sidebarLabels = array_map(
+        fn (NavigationItem $item): string => (string) $item->getLabel(),
+        favoritesSidebarItems(),
+    );
+
+    expect($sidebarLabels)->toBe(['Three', 'Two', 'One']);
+
+    Livewire::test(FavoritesWidget::class)->assertSeeInOrder(['Three', 'Two', 'One']);
+    Livewire::test(Favorites::class)->assertSeeInOrder(['Three', 'Two', 'One']);
+});
+
+test('reordering one user favorites leaves another user order untouched', function () {
+    $alice = actingAsUser();
+
+    $aliceFirst = addFavoriteFor($alice, ['name' => 'Alice one', 'url' => 'https://alice-one.test']);
+    $aliceSecond = addFavoriteFor($alice, ['name' => 'Alice two', 'url' => 'https://alice-two.test']);
+
+    $bob = User::factory()->create();
+    $bobFirst = addFavoriteFor($bob, ['name' => 'Bob one', 'url' => 'https://bob-one.test']);
+    $bobSecond = addFavoriteFor($bob, ['name' => 'Bob two', 'url' => 'https://bob-two.test']);
+
+    app(FavoriteOrderService::class)->reorder($alice, [$aliceSecond->id, $aliceFirst->id]);
+
+    expect(Favorite::query()->where('user_id', $alice->id)->ordered()->pluck('name')->all())
+        ->toBe(['Alice two', 'Alice one'])
+        ->and(Favorite::query()->where('user_id', $bob->id)->ordered()->pluck('id')->all())
+        ->toBe([$bobFirst->id, $bobSecond->id]);
 });
 
 test('dragging cards on the dashboard persists the order and refreshes the sidebar', function () {

@@ -15,6 +15,11 @@ use Illuminate\Support\Collection;
 
 class FavoritesWidget extends Widget
 {
+    /**
+     * How many favorites the dashboard grid shows. The rest lives on the page.
+     */
+    public const CARD_LIMIT = 12;
+
     protected int|string|array $columnSpan = 'full';
 
     protected string $view = 'filament.widgets.favorites-widget';
@@ -98,6 +103,7 @@ class FavoritesWidget extends Widget
                 'target' => $resolver($favorite, $user),
             ])
             ->filter(fn (array $row): bool => $row['target']->isAvailable())
+            ->take(self::CARD_LIMIT)
             ->values();
     }
 
