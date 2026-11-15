@@ -83,6 +83,7 @@ app/
     Pages/          — custom Filament pages
     Resources/      — Filament resources (CRUD)
     Widgets/        — dashboard widgets
+    Settings/       — pages and resources of the admin-only settings panel
   Models/
     Comment.php     — comments on items
     Item.php        — tasks/issues (core entity)
@@ -97,6 +98,7 @@ app/
 - `items.position` is a `DECIMAL(20,10)` position, unique per `(status, position)`; it belongs to the item's own workflow state, not to any board
 - `board_items` (`board_id`, `item_id`, `board_column_id`, `position`) is the board membership; a card move writes this row only and never changes `items.status`, labels or activity
 - Soft deletes and activity logging on `Item` via Spatie
+- Two Filament panels: `main` (default, at `/`, every authenticated user) and `settings` (at `/settings`, admins only, `app/Filament/Settings/`). Each panel discovers only its own directory, and `User::canAccessPanel()` restricts the settings panel to the `admin` role
 - Permission system via `spatie/laravel-permission` — roles defined through seeders
 - Every model change is logged via `spatie/laravel-activitylog`
 - Files (item description attachments, comment attachments) are stored on `config('attachments.disk')` — `public` locally, the `bunny` S3 disk in production; both uploaders need a disk that serves public URLs

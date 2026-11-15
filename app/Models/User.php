@@ -33,7 +33,10 @@ class User extends Authenticatable implements Commentator, FilamentUser
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return true;
+        return match ($panel->getId()) {
+            'settings' => $this->hasRole('admin'),
+            default => true,
+        };
     }
 
     public function assignedItems(): HasMany

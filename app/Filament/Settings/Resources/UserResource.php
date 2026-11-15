@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Filament\Resources;
+namespace App\Filament\Settings\Resources;
 
-use App\Filament\Resources\UserResource\Pages\CreateUser;
-use App\Filament\Resources\UserResource\Pages\EditUser;
-use App\Filament\Resources\UserResource\Pages\ListUsers;
+use App\Filament\Settings\Resources\UserResource\Pages\CreateUser;
+use App\Filament\Settings\Resources\UserResource\Pages\EditUser;
+use App\Filament\Settings\Resources\UserResource\Pages\ListUsers;
 use App\Models\User;
 use BackedEnum;
 use Filament\Actions\DeleteAction;

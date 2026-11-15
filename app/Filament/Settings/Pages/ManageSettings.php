@@ -1,6 +1,8 @@
 <?php
 
-namespace App\Filament\Pages;
+declare(strict_types=1);
+
+namespace App\Filament\Settings\Pages;
 
 use App\Settings\GeneralSettings;
 use BackedEnum;
@@ -8,6 +10,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Pages\SettingsPage;
+use Filament\Panel;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -24,6 +27,11 @@ class ManageSettings extends SettingsPage
     protected static ?int $navigationSort = 5;
 
     protected static string $settings = GeneralSettings::class;
+
+    public static function getRoutePath(Panel $panel): string
+    {
+        return '/';
+    }
 
     public static function canAccess(): bool
     {

@@ -34,8 +34,6 @@ test('guest cannot access admin pages', function (string $path) {
     $response->assertRedirect('/login');
 })->with([
     '/i',
-    '/users',
-    '/manage-settings',
     '/labels',
     '/inbox',
     '/boards',
@@ -54,7 +52,6 @@ test('authenticated user can access panel pages', function (string $path) {
 })->with([
     '/',
     '/i',
-    '/users',
     '/labels',
     '/inbox',
     '/boards',

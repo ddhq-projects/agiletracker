@@ -3,10 +3,10 @@
 namespace App\Providers\Filament;
 
 use App\Filament\Pages\Dashboard;
+use Filament\Actions\Action;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Navigation\NavigationItem;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Enums\Width;
@@ -55,15 +55,13 @@ class MainPanelProvider extends PanelProvider
             ->navigationGroups([
                 'My',
                 'Collections',
-                'Settings',
             ])
-            ->navigationItems([
-                NavigationItem::make('GitHub')
-                    ->label('GitHub')
-                    ->url('https://github.com/anatolii-iumashev/agiletracker', shouldOpenInNewTab: true)
-                    ->icon('heroicon-o-link')
-                    ->group('Settings')
-                    ->sort(999),
+            ->userMenuItems([
+                Action::make('settings')
+                    ->label('Settings')
+                    ->url(fn (): string => route('filament.settings.pages.manage-settings'))
+                    ->icon('heroicon-o-cog-6-tooth')
+                    ->visible(fn (): bool => auth()->user()?->hasRole('admin') === true),
             ])
             ->middleware([
                 EncryptCookies::class,
