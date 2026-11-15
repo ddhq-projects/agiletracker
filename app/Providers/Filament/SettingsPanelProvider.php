@@ -28,6 +28,7 @@ class SettingsPanelProvider extends PanelProvider
             ->id('settings')
             ->path('settings')
             ->login()
+            ->sidebarFullyCollapsibleOnDesktop()
             ->renderHook(
                 PanelsRenderHook::HEAD_END,
                 fn (): View => view('filament.sidebar-state'),

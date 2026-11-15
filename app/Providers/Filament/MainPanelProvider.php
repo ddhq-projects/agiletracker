@@ -30,6 +30,7 @@ class MainPanelProvider extends PanelProvider
             ->path('')
             ->spa()
             ->login()
+            ->sidebarFullyCollapsibleOnDesktop()
             ->renderHook(
                 PanelsRenderHook::BODY_END,
                 fn (): View => view('filament.autofill-sync'),

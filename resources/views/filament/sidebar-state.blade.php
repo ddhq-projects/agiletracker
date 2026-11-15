@@ -15,3 +15,22 @@
         }
     })();
 </script>
+
+{{-- The sidebar is fully collapsed on desktop: hidden until the topbar button
+     opens it. The preference lives in localStorage, so it is collapsed once per
+     browser; after that the user's own open/close choice wins on every visit. --}}
+<script>
+    (() => {
+        try {
+            const seedKey = 'filament:sidebar:collapsed_default_seeded';
+
+            if (localStorage.getItem(seedKey) === null) {
+                localStorage.setItem('filament:sidebar:open', 'false');
+                localStorage.setItem('filament:sidebar:desktop_open', 'false');
+                localStorage.setItem(seedKey, '1');
+            }
+        } catch (error) {
+            // Storage may be unavailable (private mode); the panel still works.
+        }
+    })();
+</script>
