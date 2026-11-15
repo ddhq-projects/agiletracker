@@ -65,8 +65,10 @@ Item discussions run on `relaticle/comments` 1.x over the application's existing
 
 - The comment thread is rendered inline on the item view only; there is no comments surface on the
   board or in the table.
-- No attachments, real-time broadcasting, subscriptions or notifications: they are off by design and
-  need their own storage/notification decisions.
+- Comment attachments are on and stored on the `attachments.disk` (`config/attachments.php`). The
+  package builds their URLs with `Storage::disk()->url()`, so the disk must be publicly readable —
+  private attachments need their own signed-URL route. Real-time broadcasting, subscriptions and
+  notifications remain off by design.
 - Threads are capped at the package default of depth 2 (a root comment plus one reply level).
 - Plain-text `@name` mentions written before the package are stored as text and generate no
   notification; there is no historical notification backfill.

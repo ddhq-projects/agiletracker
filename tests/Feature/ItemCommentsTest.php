@@ -78,8 +78,9 @@ test('threading stops at the configured depth', function () {
         ->and(Gate::forUser($user)->allows('reply', $nested))->toBeFalse();
 });
 
-test('attachments, notifications, subscriptions and broadcasting stay off', function () {
-    expect(config('comments.attachments.enabled'))->toBeFalse()
+test('attachments are on while notifications, subscriptions and broadcasting stay off', function () {
+    expect(config('comments.attachments.enabled'))->toBeTrue()
+        ->and(config('comments.attachments.disk'))->toBe(config('attachments.disk'))
         ->and(config('comments.notifications.enabled'))->toBeFalse()
         ->and(config('comments.subscriptions.auto_subscribe'))->toBeFalse()
         ->and(config('comments.broadcasting.enabled'))->toBeFalse()

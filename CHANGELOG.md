@@ -4,6 +4,23 @@ Use date format for releases: `YYYY.MM.I` (e.g. `2026.05.1-alpha`).
 Use flat lists for changes
 If changes many - use categories (Added, Changed, Fixed, etc.)
 
+## [Unreleased]
+
+### Added
+- Boards: `Board`, `BoardColumn` and `BoardItem` — any item or project can be on any number of boards, with its own column and card order on each
+- Boards resource (`/boards`) to create, reorder, rename and delete boards and to edit their columns (name, colour, WIP limit, order)
+- Board page (`/boards/{board}`) with Flowforge drag & drop, label/assignee filters, “Add items”, and open/remove card actions
+- “Add to board” from the item table (row and bulk) and the item view page; item view lists the boards an item belongs to
+- Default “Main board” backfilled from the four workflow states so existing items stay visible
+- File attachments: item description editor and comment composer upload to the disk set by `ATTACHMENTS_DISK` (`public` locally, `bunny` in production)
+- `config/attachments.php` — one disk, directory, size limit and MIME list for both uploaders
+- `bunny` filesystem disk and `league/flysystem-aws-s3-v3`, plus a Bunny Storage Zone with S3 compatibility and a CDN Pull Zone for public file URLs
+
+### Changed
+- The single status Kanban page is replaced by Boards; `/kanban-board` redirects to `/boards`
+- Moving a board card writes only that board's membership (`board_items`); the item's native `status` and other boards are untouched
+- Comment attachments are enabled; they were migrated but switched off in the previous release
+
 ## [2026.11.1-alpha] — 2026-11-13
 
 Dependency refresh: every Composer and npm package is on its latest release.

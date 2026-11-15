@@ -11,12 +11,12 @@
   - [ ] add [https://github.com/relaticle/activity-log](https://github.com/relaticle/activity-log)
   - [ ] go [https://github.com/anatolii-iumashev/agiletracker/pull/6](https://github.com/anatolii-iumashev/agiletracker/pull/6)
     - sidebar - collapsed
-      - save files - on local and S3 ([Bunny.net S3 example and tutorial](docs/wiki/bunny-s3-storage.md))
+      - [x] save files - on local and S3 ([Bunny.net S3 example and tutorial](docs/wiki/bunny-s3-storage.md))
 
 - [ ] beta 1
   - add master setup - like wordpress - if no data - setup first admin user for first auto login
   - merge migrations (one per model + one for settings)
-  - [ ] Kanban board (drag & drop, status columns)
+  - [x] Boards (drag & drop, per-board columns, items on many boards; replaces the single Kanban page)
   - [ ] Roles & permissions (admin, manager, user) via Spatie
   - [ ] Sub issues (parent_id in Item)
 - [ ] f [http://agiletracker.localhost/favorite](http://agiletracker.localhost/favorite) rename to favorites

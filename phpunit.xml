@@ -33,5 +33,6 @@
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
         <env name="REST_AUTHORIZATIONS_STRICT" value="true"/>
+        <env name="ATTACHMENTS_DISK" value="public"/>
     </php>
 </phpunit>

@@ -38,7 +38,7 @@ test('guest cannot access admin pages', function (string $path) {
     '/manage-settings',
     '/labels',
     '/inbox',
-    '/kanban-board',
+    '/boards',
     '/favorite',
     '/sent',
 ]);
@@ -57,7 +57,7 @@ test('authenticated user can access panel pages', function (string $path) {
     '/users',
     '/labels',
     '/inbox',
-    '/kanban-board',
+    '/boards',
     '/favorite',
     '/sent',
 ]);

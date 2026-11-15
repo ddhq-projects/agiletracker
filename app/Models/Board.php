@@ -72,14 +72,16 @@ class Board extends Model
      */
     public static function defaultColumns(): array
     {
-        return array_map(
-            fn (ItemStatus $status, int $index): array => [
+        $columns = [];
+
+        foreach (ItemStatus::cases() as $position => $status) {
+            $columns[] = [
                 'name' => $status->getLabel(),
                 'color' => $status->getColor(),
-                'position' => $index,
-            ],
-            ItemStatus::cases(),
-            array_keys(ItemStatus::cases()),
-        );
+                'position' => $position,
+            ];
+        }
+
+        return $columns;
     }
 }

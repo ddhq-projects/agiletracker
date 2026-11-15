@@ -55,15 +55,17 @@ class ViewItem extends ViewRecord
                             continue;
                         }
 
-                        $result = app(AddItemsToBoard)($board, [$item->getKey()]);
+                        $result = app(AddItemsToBoard::class)($board, [$item->getKey()]);
                         $added += $result['added'];
                         $skipped += $result['skipped'];
                     }
 
+                    $item->unsetRelation('boards');
+
                     Notification::make()
                         ->success()
                         ->title($added > 0 ? 'Added to the board' : 'Already on the board')
-                        ->body($added.' added, '.$skipped.' already on a board')
+                        ->body($added.' new, '.$skipped.' already present')
                         ->send();
                 }),
         ];

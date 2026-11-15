@@ -93,11 +93,13 @@ app/
 
 ## Architecture notes
 - `Item` is the core model — supports `status` (native workflow state: `todo`, `in_progress`, `review`, `done`), `parent_id` (subtasks), assignee, reporter, due dates, `is_epic`; labels are non-exclusive tags and `meta` holds extra JSON metadata
-- `App\Enums\ItemStatus` is the single source of workflow states; the Kanban board (`app/Filament/Pages/KanbanBoard.php`, `relaticle/flowforge`) and the Item table/infolist/API all read it
-- `items.position` is a `DECIMAL(20,10)` board position, unique per `(status, position)`; only the board writes it, and `Item` assigns the next position in the column on create
+- `App\Enums\ItemStatus` is the single source of the item's own workflow state; the Item table/infolist/API read it. Boards are separate: `Board`, `BoardColumn` and `BoardItem` (`app/Filament/Pages/BoardView.php`, `relaticle/flowforge`) give each board its own editable columns, and an item can sit in a different column on every board
+- `items.position` is a `DECIMAL(20,10)` position, unique per `(status, position)`; it belongs to the item's own workflow state, not to any board
+- `board_items` (`board_id`, `item_id`, `board_column_id`, `position`) is the board membership; a card move writes this row only and never changes `items.status`, labels or activity
 - Soft deletes and activity logging on `Item` via Spatie
 - Permission system via `spatie/laravel-permission` — roles defined through seeders
 - Every model change is logged via `spatie/laravel-activitylog`
+- Files (item description attachments, comment attachments) are stored on `config('attachments.disk')` — `public` locally, the `bunny` S3 disk in production; both uploaders need a disk that serves public URLs
 
 ## Before committing
 1. `./vendor/bin/pint` — must pass

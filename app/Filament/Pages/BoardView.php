@@ -13,7 +13,6 @@ use App\Models\BoardItem;
 use App\Models\Item;
 use App\Models\Label;
 use App\Models\User;
-use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Infolists\Components\TextEntry;
@@ -32,7 +31,6 @@ use Livewire\Attributes\Locked;
 use Relaticle\Flowforge\Board;
 use Relaticle\Flowforge\BoardPage;
 use Relaticle\Flowforge\Column;
-use UnitEnum;
 
 /**
  * One board at /boards/{board}. The Flowforge board is driven by board_items,
@@ -66,14 +64,6 @@ class BoardView extends BoardPage
     }
 
     protected static bool $shouldRegisterNavigation = false;
-
-    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-view-columns';
-
-    protected static ?string $navigationLabel = 'Boards';
-
-    protected static UnitEnum|string|null $navigationGroup = 'Collections';
-
-    protected static ?int $navigationSort = 2;
 
     #[Locked]
     public int $boardId = 0;
@@ -122,7 +112,7 @@ class BoardView extends BoardPage
                 BoardItem::query()
                     ->where('board_id', $boardRecord->getKey())
                     ->whereHas('item')
-                    ->with(['item.assignee', 'item.labels', 'item.parent']),
+                    ->with(['item.assignee', 'item.labels']),
             )
             ->columnIdentifier('board_column_id')
             ->positionIdentifier('position')
@@ -222,6 +212,7 @@ class BoardView extends BoardPage
     ): void {
         $boardItem = BoardItem::query()
             ->where('board_id', $this->boardId)
+            ->whereHas('item')
             ->findOrFail($cardId);
 
         Gate::authorize('update', $boardItem->item);
@@ -285,7 +276,7 @@ class BoardView extends BoardPage
                         return;
                     }
 
-                    $result = app(AddItemsToBoard)($this->boardRecord, $data['item_ids'], $column);
+                    $result = app(AddItemsToBoard::class)($this->boardRecord, $data['item_ids'], $column);
 
                     $body = $result['added'].' added';
 

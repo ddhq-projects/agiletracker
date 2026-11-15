@@ -8,6 +8,7 @@ use App\Filament\Pages\BoardView;
 use App\Filament\Resources\BoardResource\Pages;
 use App\Models\Board;
 use BackedEnum;
+use Closure;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -96,6 +97,18 @@ class BoardResource extends Resource
                         ->orderColumn('position')
                         ->reorderableWithButtons()
                         ->minItems(1)
+                        ->rules([
+                            fn (): Closure => function (string $attribute, mixed $value, Closure $fail): void {
+                                $names = collect(is_array($value) ? $value : [])
+                                    ->pluck('name')
+                                    ->filter(fn (?string $name): bool => filled($name))
+                                    ->map(fn (string $name): string => mb_strtolower(trim($name)));
+
+                                if ($names->duplicates()->isNotEmpty()) {
+                                    $fail('Column names must be unique on a board.');
+                                }
+                            },
+                        ])
                         ->addActionLabel('Add column')
                         ->columnSpanFull(),
                 ]),

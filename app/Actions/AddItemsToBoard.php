@@ -31,6 +31,8 @@ final class AddItemsToBoard
             ->whereKey($itemIds)
             ->pluck('id')
             ->map(fn (int|string $id): int => (int) $id)
+            ->unique()
+            ->values()
             ->all();
 
         if ($itemIds === []) {

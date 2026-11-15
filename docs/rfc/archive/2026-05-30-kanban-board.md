@@ -1,6 +1,6 @@
 # RFC: Boards - Kanban for AgileTracker
 
-> **Superseded** by [Relaticle Kanban, Comments, and Item Custom Fields](../2026-11-14-relaticle-item-features.md). The board was delivered with `relaticle/flowforge` and a native `items.status`; the multiple-boards idea below is still unimplemented.
+> **Superseded** by [Relaticle Kanban, Comments, and Item Custom Fields](../2026-11-14-relaticle-item-features.md). The board was delivered with `relaticle/flowforge` and a native `items.status`; the multiple-boards idea in the MVP list below was delivered later as [Boards](../../specs/boards.md).
 
 - [ ] MVP
     - add the idea that boards are a model - you can have different boards and link different tasks to different boards - one task can be put on several boards

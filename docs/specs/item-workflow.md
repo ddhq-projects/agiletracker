@@ -7,6 +7,12 @@ rfc: ../rfc/2026-11-14-relaticle-item-features.md
 
 # Spec: Item workflow state and Kanban board
 
+> **Partly superseded.** The single status-driven Kanban page was replaced by
+> first-class [Boards](./boards.md): a board has its own editable columns and an
+> item can be on any number of boards with a different stage on each. Native
+> `items.status` and `items.position` remain the item's own workflow state and
+> list order; a board move no longer writes them.
+
 ## What was done
 
 Items carry a native workflow status again, and the Kanban page is a real board.
@@ -62,8 +68,9 @@ The demo seeder now assigns a status and no longer seeds workflow labels.
 
 ## Known limitations / next steps
 
-- Only one board over all items. Multiple boards, per-board columns, WIP limits, swimlanes and card
-  ordering across boards are out of scope.
-- The board shows every item regardless of type or parent; a project-scoped board is a separate
-  feature.
-- `items.meta` is still present and `type` is still stored there until the custom-fields stage lands.
+- The single status-driven board was replaced by [Boards](./boards.md); the old
+  page is gone and `/kanban-board` redirects to `/boards`.
+- `app/Filament/Pages/KanbanBoard.php` no longer exists; the board now lives in
+  `app/Filament/Pages/BoardView.php` and is driven by `board_items`.
+- `items.meta` is still present and `type` is still stored there until the
+  custom-fields stage lands.

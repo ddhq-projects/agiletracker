@@ -51,6 +51,25 @@ class ItemResource extends Resource
 
     // ─── Form ─────────────────────────────────────────────────────────────────
 
+    /**
+     * The description editor, with file attachments on the configured disk.
+     * Extracted so the storage wiring is testable without a Livewire round trip.
+     */
+    public static function descriptionEditor(): Forms\Components\MarkdownEditor
+    {
+        return Forms\Components\MarkdownEditor::make('description')
+            ->columnSpanFull()
+            ->fileAttachmentsDisk(config('attachments.disk'))
+            ->fileAttachmentsDirectory(config('attachments.directory').'/items')
+            ->fileAttachmentsAcceptedFileTypes(config('attachments.allowed_types'))
+            ->fileAttachmentsMaxSize(config('attachments.max_size'))
+            ->toolbarButtons([
+                'bold', 'italic', 'strike',
+                'codeBlock', 'bulletList', 'orderedList',
+                'link', 'table', 'attachFiles',
+            ]);
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema->schema([
@@ -63,17 +82,7 @@ class ItemResource extends Resource
                         ->maxLength(255)
                         ->columnSpanFull(),
 
-                    Forms\Components\MarkdownEditor::make('description')
-                        ->columnSpanFull()
-                        ->fileAttachmentsDisk(config('attachments.disk'))
-                        ->fileAttachmentsDirectory(config('attachments.directory').'/items')
-                        ->fileAttachmentsAcceptedFileTypes(config('attachments.allowed_types'))
-                        ->fileAttachmentsMaxSize(config('attachments.max_size'))
-                        ->toolbarButtons([
-                            'bold', 'italic', 'strike',
-                            'codeBlock', 'bulletList', 'orderedList',
-                            'link', 'table', 'attachFiles',
-                        ]),
+                    static::descriptionEditor(),
 
                     Forms\Components\Select::make('parent_id')
                         ->label('Parent')
@@ -368,15 +377,15 @@ class ItemResource extends Resource
                                 continue;
                             }
 
-                            $result = app(AddItemsToBoard)($board, [$record->getKey()]);
+                            $result = app(AddItemsToBoard::class)($board, [$record->getKey()]);
                             $added += $result['added'];
                             $skipped += $result['skipped'];
                         }
 
                         Notification::make()
                             ->success()
-                            ->title($added > 0 ? 'Added to the board' : 'Already on the board')
-                            ->body($added.' added, '.$skipped.' already on a board')
+                            ->title($added > 0 ? 'Boards updated' : 'Already on the selected boards')
+                            ->body($added.' new, '.$skipped.' already present')
                             ->send();
                     }),
             ])
@@ -410,7 +419,7 @@ class ItemResource extends Resource
                                 continue;
                             }
 
-                            app(AddItemsToBoard)($board, $itemIds);
+                            app(AddItemsToBoard::class)($board, $itemIds);
                         }
 
                         Notification::make()
